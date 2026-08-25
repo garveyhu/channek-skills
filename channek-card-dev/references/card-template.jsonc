@@ -1,0 +1,114 @@
+// 可抄的完整示例卡：口播快剪频道（6 步流水线 · 无分镜 / 无素材生成 / 无封面）
+// 抄的时候：改 id/name/slug，删掉用不上的段——顶层必填只有前 5 个字段。
+// 卡目录形态：
+//   acme.talkfast/
+//   ├── card.json          ← 本文件
+//   ├── prompts/script.md  ← prompts 段引用的提示词资产
+//   ├── STOREFRONT.md      ← 上架长文（要上架才需要）
+//   └── assets/icon.png    ← meta.icon 引用
+{
+  "schema": "channek.stylecard",
+  "formatVersion": 2,
+  "id": "acme.talkfast",
+  "name": "口播快剪",
+  "slug": "talkfast",
+  "cardVersion": "1.0.0",
+
+  "identity": {
+    "positioning": "口播观点频道：单人出镜 / 快节奏剪辑 / 周更",
+    "audience": "对效率工具感兴趣的中文观众"
+  },
+
+  "brand": {
+    "tokens": {
+      "colors": { "ink": "#1a1a1a", "paper": "#faf7f2", "accent-warm": "#c96f4a" },
+      "accent": "accent-warm"
+    }
+  },
+
+  "voice": {
+    "default": "host",
+    "profiles": {
+      "host": { "label": "主播音色", "engine": "acme.voxcpm-local" }
+    }
+  },
+
+  "captions": { "style": "bottom-center", "maxCharsPerLine": 18 },
+
+  "pipeline": {
+    "steps": [
+      { "key": "topic",   "step": "acme.topic" },
+      { "key": "script",  "step": "acme.script",
+        "config": { "systemPromptRef": "prompts/script.md" } },
+      { "key": "voice",   "step": "acme.voice" },
+      { "key": "caption", "step": "acme.caption" },
+      { "key": "edit",    "step": "channek.edit" },
+      { "key": "publish", "step": "acme.publish",
+        "config": { "platforms": ["bilibili", "douyin"] } }
+    ]
+  },
+
+  "layout": {
+    "contentDir": "episodes",
+    "entryDirName": "{date}-{slug}",
+    "sections": [{ "id": "backlog", "path": "backlog" }],
+    "artifacts": {
+      "acme.script":      "script.md",
+      "acme.voiceTrack":  "voice/track.wav",
+      "acme.captionCues": "captions/cues.json",
+      "acme.master":      "master/final.mp4",
+      "acme.delivery":    "deliver/"
+    },
+    "detect": { "anyOf": ["episodes"] }
+  },
+
+  "editor": {
+    "trackTemplate": [
+      { "kind": "video",   "name": "V1" },
+      { "kind": "caption", "name": "字幕" },
+      { "kind": "audio",   "name": "旁白" },
+      { "kind": "audio",   "name": "音乐" }
+    ]
+  },
+
+  "prompts": { "script": "prompts/script.md" },
+
+  "presentation": {
+    "sections": [{ "id": "homes" }, { "id": "content" }],
+    "defaultSection": "homes"
+  },
+
+  "requires": {
+    "app": ">=0.9.0",
+    "providers": [
+      { "capability": "channek.tts",
+        "prefer": ["acme.voxcpm-local"],
+        "plugins": ["acme.voice-lab"],
+        "reason": "频道音色按这家调过" },
+      { "capability": "channek.asr", "prefer": ["acme.whisper-local"] }
+    ],
+    "plugins": [{ "id": "acme.talkfast-steps" }]
+  },
+
+  "runtime": {
+    "endpoints": [
+      { "id": "tts-endpoint", "capability": "channek.tts" }
+      // 注意：只有 id + capability。URL / 模型路径写在这里会被校验直接拒——
+      // 端点真值属于收卡人自己的插件设置。
+    ]
+  },
+
+  "meta": {
+    "author": "acme",
+    "license": "CC-BY-4.0",
+    "description": "口播快剪频道模板：6 步流水线 + 暖纸视觉",
+    "icon": "assets/icon.png"
+  },
+
+  "bundle": {
+    "omit": [
+      { "path": "assets/ip-actions",
+        "reason": "IP 动作帧序列是作者形象专属，请用自己的 IP 生成一套" }
+    ]
+  }
+}

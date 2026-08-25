@@ -1,0 +1,32 @@
+{
+  "$schema": "https://cdn.archeruuu.com/libs/channek/plugin-manifest.schema.json",
+  "manifestVersion": 1,
+  "id": "acme.fan-ops",
+  "name": "粉丝运营",
+  "version": "1.0.0",
+  "description": "素材与运营两个整页功能区",
+  "author": { "name": "acme" },
+  "minAppVersion": "0.1.0",
+  "trust": "sandboxed",
+  "apiVersion": "1",
+  "entries": { "sandbox": "dist/assets.html" },
+  "permissions": ["workspace:read", "clipboard:write", "shell:openExternal"],
+  "contributes": {
+    "ui.suiteSection": [
+      {
+        "id": "acme.fan-ops.assets",
+        "label": "素材",
+        "icon": "assets",
+        "entry": "dist/assets.html",
+        "declaredOnly": true
+      },
+      {
+        "id": "acme.fan-ops.operations",
+        "label": "运营",
+        "icon": "operations",
+        "entry": "dist/operations.html",
+        "declaredOnly": true
+      }
+    ]
+  }
+}

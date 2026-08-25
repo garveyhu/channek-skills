@@ -1,0 +1,25 @@
+{
+  "$schema": "https://cdn.archeruuu.com/libs/channek/plugin-manifest.schema.json",
+  "manifestVersion": 1,
+  "id": "acme.warm-night",
+  "name": "暖夜",
+  "version": "1.0.0",
+  "description": "更深的暖砂暗色主题",
+  "author": { "name": "acme" },
+  "minAppVersion": "0.1.0",
+  "trust": "declarative",
+  "contributes": {
+    "ui.theme": [
+      {
+        "id": "night",
+        "label": "暖夜 · 暗",
+        "base": "dark",
+        "tokens": {
+          "--ck-surface": "#17150f",
+          "--ck-accent": "#8a9b6e"
+        },
+        "preview": { "surface": "#17150f", "ink": "#e8e2d4", "accent": "#8a9b6e" }
+      }
+    ]
+  }
+}

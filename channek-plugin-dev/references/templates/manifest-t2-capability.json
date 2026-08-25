@@ -1,0 +1,71 @@
+{
+  "$schema": "https://cdn.archeruuu.com/libs/channek/plugin-manifest.schema.json",
+  "manifestVersion": 1,
+  "id": "acme.draw",
+  "name": "Acme 出图",
+  "version": "1.0.0",
+  "description": "本机出图能力，模型目录自选",
+  "author": { "name": "acme" },
+  "minAppVersion": "0.9.0",
+  "trust": "privileged",
+  "apiVersion": "1",
+  "contributes": {
+    "capability.provider": [
+      {
+        "id": "acme.draw-local",
+        "label": "Acme 本机出图",
+        "capabilities": ["channek.image"],
+        "invoke": {
+          "kind": "command",
+          "program": { "setting": "pythonRoot", "suffix": "bin/python" },
+          "args": [
+            "{{pluginDir}}/bin/draw.py",
+            "--prompt-file", "{{input.prompt@file}}",
+            "--size", "{{params.imageSize}}",
+            "--out", "{{outputDir}}/img-{{runId}}.png"
+          ],
+          "result": { "kind": "stdout-json", "okField": "ok", "pathField": "path" }
+        }
+      }
+    ],
+    "ui.settingsSection": [
+      {
+        "id": "acme.draw.local",
+        "label": "本机出图",
+        "provider": "acme.draw-local",
+        "fields": [
+          {
+            "key": "pythonRoot",
+            "type": "directory",
+            "label": "Python 环境目录",
+            "default": "",
+            "placeholder": "选一个装了 torch 的 venv",
+            "scope": "user"
+          },
+          {
+            "key": "imageSize",
+            "type": "string",
+            "label": "尺寸",
+            "default": "1024x1024",
+            "scope": "workspace",
+            "snapshot": true
+          }
+        ]
+      }
+    ],
+    "plugin.requirement": [
+      {
+        "id": "acme.draw.torch",
+        "label": "torch 环境",
+        "severity": "required",
+        "providers": ["acme.draw-local"],
+        "probe": {
+          "kind": "command",
+          "program": { "setting": "pythonRoot", "suffix": "bin/python" },
+          "args": ["-c", "import torch"]
+        },
+        "remedy": { "kind": "setting", "key": "pythonRoot" }
+      }
+    ]
+  }
+}
