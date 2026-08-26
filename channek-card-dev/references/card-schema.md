@@ -80,3 +80,44 @@
 `author` / `license` / `description` / `icon`（卡内相对路径）/ `preview[]`（≤6，外链或卡内路径）/
 `cover` / `trailer`（仅外链）/ `homepage` / `repository` / `storefront`（STOREFRONT.md 自定义位置）。
 签名不在卡本体——签名对象是分发包（bundle 层）。
+
+## 段内必填(踩坑最多的一处)
+
+**「这个段可以不写」≠「段内字段可以不填」。** 段是可选的,但一旦写了,下面这些字段一个都不能少
+——少一个整张卡就不合法,而 app 对不合法的卡**不报错、只静默退回活动卡**(见 SKILL.md 第 3 步)。
+
+下表由 schema 反射生成,不是手抄:
+
+| 段 | 一旦写了,这些必填 |
+|---|---|
+| `identity` | `format` |
+| `brand` | `tokens` |
+| `brand.tokens` | `colors`, `accent`, `fonts`, `stroke`, `radius`, `grid` |
+| `locks` | `visualStyle`, `motionSound` |
+| `voice` | `default`, `profiles` |
+| `voice.profiles.<名>` | `engine` |
+| `captions` | `highlight`, `maxLines`, `wordsPerLine`, `stroke`(`none`/`soft`/`hard`/`pill`) |
+| `cover` | `config` |
+| `audio` | `bed` |
+| `libraries` | `sound`, `asset`, `scenes` |
+| `libraries.<条目>` | `key`, `path` |
+| `freeze` | `visualTokens`, `voice`, `visualStyle` |
+| `platforms.<平台>` | `enabled` |
+| `pipeline.steps[]` | `key`, `step` |
+| `presentation.sections[]` | `id` |
+| `runtime.endpoints[]` | `id` |
+| `runtime.providers[]` | `capability` |
+| `config.sections[]` | `id`, `name`, `fields` |
+
+### 几个只认枚举的字段
+
+| 字段 | 只接受 |
+|---|---|
+| `identity.format.captions` | `sentence` / `word` / `none` |
+| `captions.stroke` | `none` / `soft` / `hard` / `pill` |
+| `audio.bed.source` | `synth` / `library` |
+| `bundle.demo.license` | `sample-only` / `cc-by` / `inherit` |
+
+> 实测教训:`captions` 段写成 `{style, maxCharsPerLine, docRef}` —— 前两个是自造字段
+> (schema 是 passthrough,收下但没人读),而四个真必填字段一个没填。卡因此不合法,
+> 表现出来却是「设置页整页显示别的频道的卡」,查了半小时源码才定位到。

@@ -31,7 +31,7 @@ description: 开发、修改、校验并打包一张 Channek 风格卡（card.js
 
 - **从零建一张卡** → 走完整访谈(下一步)。
 - **改现有的卡** → 先读他的 card.json,复述你理解的现状,再问要改哪里。
-- **把频道打包分发** → 跳到第 5 步,重点过可移植红线。
+- **把频道打包分发** → 跳到第 6 步,重点过可移植红线。
 
 ### 1. 访谈:问清创作系统的形状
 
@@ -59,7 +59,44 @@ description: 开发、修改、校验并打包一张 Channek 风格卡（card.js
   界面写进 `presentation`(启用哪些功能区)、依赖写进 `requires`——细则见
   `references/pipeline-and-artifacts.md` 与 `references/requires-and-secrets.md`。
 
-### 3. 过可移植红线(每次保存前自检)
+### 3. 先过 schema(机器判 · 最硬的一道闸)
+
+**写完 card.json 的第一件事,是用 app 自己的 zod schema 验一遍,不是用你自己写的检查脚本。**
+自写脚本查得了路径引用和可移植红线,查不了字段级的结构合法性——两者不是一回事。
+
+在 Channek 源码仓的 `shared/style-card` 目录下跑(`<CHANNEK_REPO>` 换成本机路径):
+
+```bash
+cd <CHANNEK_REPO>/shared/style-card
+cat > .validate.tmp.mjs <<'EOF'
+import { validateStyleCard } from './src/card-schema/card.schema.ts';
+import { readFileSync } from 'node:fs';
+const r = validateStyleCard(JSON.parse(readFileSync(process.argv[2], 'utf8')));
+if (r.ok) console.log('✅ 通过');
+else { console.log(`❌ ${r.issues.length} 条:`); r.issues.forEach(i => console.log(' ·', i.path || '(根)', '→', i.message)); }
+EOF
+npx tsx .validate.tmp.mjs /绝对路径/风格卡/card.json; rm -f .validate.tmp.mjs
+```
+
+**为什么这道闸必须排在最前**:卡不合 schema 时,app 的表现**不是报错,是装作没事**——
+频道照常打开,但这张卡进不了卡库,于是频道的卡绑定解析不出来,整条链一路退回「活动卡」
+(= 上一个打开过的频道那张卡)。
+
+用户实际看到的症状是这三条:
+
+| 他看到的 | 真实原因 |
+|---|---|
+| 设置页里画风锁 / 配音 / 字幕全是**别的频道**的内容 | 这张卡没进卡库 |
+| 插件区「本频道在用 · 0」,没有任何「这张卡要什么」的提示 | `cardRequiredPlugins` 查回 0 条 |
+| 「当前频道」写着本频道名,「风格卡」却写着**别的卡名** | 退回了活动卡 |
+
+**没有一条症状指向「你的卡第 N 行写错了」。** 实测这三条会把人(和 AI)引向
+「app 坏了 / 注册表错了 / 窗口状态乱了」,查很久都查不到卡上。跑一次校验,10 秒定位。
+
+**最容易踩的一类**:**可选段一旦写了,段内必填字段一个都不能少**。
+「这个段可以不写」≠「段内字段可以不填」。完整清单见 `references/card-schema.md` 的「段内必填」表。
+
+### 4. 过可移植红线(每次保存前自检)
 
 卡要在**别人的机器**上活,所以「只在你这台机器上成立的东西」一律不进卡:
 
@@ -71,7 +108,7 @@ description: 开发、修改、校验并打包一张 Channek 风格卡（card.js
 - [ ] 卡内相对路径不含 `..`、不是绝对路径(防路径逃逸,校验会拒)。
 - [ ] 卡目录里**没有可执行代码**——要代码就拆成独立插件,卡用 `requires` 引用它。
 
-### 4. 过流程体检(写完 pipeline 后自查)
+### 5. 过流程体检(写完 pipeline 后自查)
 
 - [ ] 每步 `key` 唯一(key 是这一步在这个频道里的名字,进度记账、文件归属都认它)。
 - [ ] 引用的步骤 id、工件类型、功能区 id 都真实存在(来自内置或 `requires.plugins` 声明的插件)。
@@ -80,7 +117,7 @@ description: 开发、修改、校验并打包一张 Channek 风格卡（card.js
 - [ ] 每步 `config` 符合那一步声明的配置结构。
 - [ ] `presentation.defaultSection`(若写)必须在 `presentation.sections` 里。
 
-### 5. 交付与验证
+### 6. 交付与验证
 
 **先教用户把卡用起来**(比打包更优先):
 
