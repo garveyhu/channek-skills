@@ -1,0 +1,152 @@
+// card.json 的 `config` 段模板 —— 「卡自声明的可编辑配置」。
+//
+// 它是什么：你在 app 的卡设置页看到的每一个控件，都是这里的一条 field 声明出来的。
+// 它同时是**喂给 AI 的频道参数表**（渲进 AGENTS.md 的「频道配置」节）。
+// 一处声明，三处生效：设置页 UI · AGENTS.md · 出片各步按 key 取值。
+//
+// 铁律：config 只装「一眼一个控件」的扁平项。结构体（色板、平台矩阵、封面套件）
+// 归文件——用 `fileRef` 指过去，别把 JSON 塞进 value。
+
+{
+  "config": {
+    "sections": [
+      {
+        // id：卡内唯一、稳定。它是保存寻址 / AGENTS.md 锚点 / 体检引用的坐标，
+        //     定了就别改（改 = 用户设过的值找不到家）。
+        "id": "channek.visual",
+        "name": "画风锁",
+        "hint": "出图链统一注入的东西，改了整个频道的脸就变了",
+
+        // group 只有三个值，**内核定名、卡只选归哪一组**：
+        //   style    这张卡的脸，做片子时会回来动的
+        //   rules    频道纪律（锁 / 质检闸 / 发布口径），定下就别常动
+        //   advanced 少碰的机器参数
+        // 缺省 style。不许自己发明组名——每张卡发明一套，装两张卡导航就是乱的。
+        "group": "style",
+
+        "fields": [
+          // ── 七种字段类型，一样来一条 ──────────────────────────────
+
+          // ① text：短文本 / 长文本
+          {
+            "key": "channek.visual.imagePrompt",   // 卡内全局唯一点分 key
+            "name": "出图提示词",                    // 显示名中文直写，无 i18n 层
+            "type": "text",
+            "value": "flat illustration, <你的画风关键词>",
+            "multiline": true,
+            "hint": "生图链统一注入的正向提示词",
+            "placeholder": "逗号分隔的英文关键词",
+            "suggestions": ["flat illustration", "editorial poster"]
+          },
+
+          // ①b text + valueFrom：长文本外置到卡内文件（与 value 互斥）
+          //     超过三五行的提示词就该外置——写在 JSON 里既难改也难 diff。
+          {
+            "key": "channek.visual.negativePrompt",
+            "name": "负向提示词",
+            "type": "text",
+            "valueFrom": "prompts/负向提示词.txt"    // 卡根内相对路径
+          },
+
+          // ② number：带单位与范围的数值
+          {
+            "key": "channek.voice.pace",
+            "name": "配速（字/秒）",
+            "type": "number",
+            "value": 5.13,
+            "min": 3,
+            "max": 8,
+            "step": 0.01,
+            "unit": "字/秒",
+            "required": true                        // 不填就不能用；内栏「N 未填」只数它
+          },
+
+          // ③ boolean
+          {
+            "key": "channek.freeze.visualStyle",
+            "name": "冻结画风",
+            "type": "boolean",
+            "value": true
+          },
+
+          // ④ select：给定选项
+          {
+            "key": "channek.captions.stroke",
+            "name": "描边样式",
+            "type": "select",
+            "value": "pill",
+            "options": [
+              { "value": "none", "label": "无描边" },
+              { "value": "soft", "label": "柔描边" },
+              { "value": "hard", "label": "硬描边" },
+              { "value": "pill", "label": "药丸底" }
+            ],
+            "allowUnset": false
+          },
+
+          // ⑤ color
+          {
+            "key": "brand.accent",
+            "name": "强调色",
+            "type": "color",
+            "value": "#FFD12E"
+          },
+
+          // ⑥ fileRef：指向卡内的一个文件（结构体配置就走这条路）
+          {
+            "key": "cover.config",
+            "name": "封面套件",
+            "type": "fileRef",
+            "value": "品牌套件/封面/cover.json",
+            "accept": [".json"]
+          },
+
+          // ⑦ directory：本机目录。**值永不入卡**（落工作区侧车）。
+          //    写了 value 会被 schema 直接拒——这是可移植性红线，不是风格建议。
+          {
+            "key": "local.exportDir",
+            "name": "成片导出目录",
+            "type": "directory",
+            "hint": "每台机器自己配，不随卡走"
+          },
+
+          // ── brief：AGENTS.md 渲染开关（缺省 true）─────────────────
+          // 标 false = 这项只进设置页，不喂给 AI。
+          // 用在「AI 不需要知道、知道了反而是噪音」的项上。
+          {
+            "key": "channek.visual.seed",
+            "name": "出图种子",
+            "type": "number",
+            "value": 9,
+            "brief": false
+          }
+        ]
+      }
+    ]
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 语义键（well-known keys）：内核认识的少数 key
+// ══════════════════════════════════════════════════════════════════
+//
+// 用**同名 key** 声明，内核就按它取值，并在 AGENTS.md 里自动长出对应章节。
+// 用别的名字也能跑，但那是「卡私有」——只进设置页与 AGENTS.md，内核不认识。
+//
+//   channek.visual.imagePrompt      出图正向提示词          text
+//   channek.visual.negativePrompt   出图负向提示词          text
+//   channek.visual.seed             出图种子（缺席=随机）    number
+//   channek.visual.sref             风格参考                text
+//   channek.voice.default           默认音色档              select
+//   channek.voice.pace              配速（字/秒）           number  ★ 触发「写稿硬约束」节
+//   channek.captions.highlight      关键词高亮              boolean
+//   channek.captions.maxLines       行数上限                number
+//   channek.captions.wordsPerLine   每行字数                number
+//   channek.captions.stroke         描边样式                select
+//   channek.freeze.visualTokens     冻结视觉 token          boolean ★ 为 true 时进「铁律」节
+//   channek.freeze.voice            冻结音色                boolean ★ 同上
+//   channek.freeze.visualStyle      冻结画风                boolean ★ 同上
+//   channek.publish.accounts        发布账号（逗号分隔）     text
+//
+// 注：config 的七种类型里**没有数组**。要表达清单就用逗号分隔的 text，消费方自己重组
+//     （`channek.publish.accounts` 就是这么定的）；真结构化的东西走 fileRef 指文件。
