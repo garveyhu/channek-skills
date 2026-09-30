@@ -61,3 +61,29 @@
 | V16 | plugin.requirement 结构校验（remedy.commandId 必须由本 manifest 贡献、remedy.key 必须是本 manifest 某设置字段、providers 点名必须存在） |
 
 本地校验：`plugin-cli validate`（与商店目录 CI 同一执行体），error 级 = 直接拒收。
+
+
+## 设置字段的隐性必填
+
+渲染层那道校验（`frontend/ui/src/extensions/points/settingsSection.point.ts`）比字段表严：
+
+- **`type: "string"` 的 `default` 必须是 string —— 缺席也算违规**
+  （报 `string field default must be a string`）。不想给默认值就写 `""`。
+  `boolean` 同理，必须是 boolean。
+- `endpoint` 标记只能挂在 string 字段上。
+- `secret` / `credentialRef` / `action` / `embed` **不承载值**，别指望从设置里读出东西来。
+
+## `shell` 权限到底能干什么
+
+`shell:openExternal` 给到的只有一个方法，而且**只放 http/https**：
+
+```ts
+shell: { openExternal: (url: string) => Promise<void> }   // host-api-gate.ts
+```
+
+给它 `file://` 会被当场回绝（`URL scheme rejected: file:`）—— 这限制是对的，
+一个能让插件开任意本地文件的口子，威胁面比看上去大。
+
+要打开本机文件（比如自己刚生成的产物），**T2 自己 spawn 系统的打开命令**：
+`open`（macOS）/ `cmd /c start`（Windows）/ `xdg-open`（Linux）。
+T2 本来就有 spawn，不额外扩权限面。

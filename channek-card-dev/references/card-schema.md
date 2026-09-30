@@ -1,6 +1,7 @@
 # card.json 字段表
 
-校验器：卡 schema 的 zod 单一真相源在 app 内（`@channek/style-card`）。本表按层摘录；
+校验器：卡 schema 的 zod 单一真相源在 app 内（`@channek/style-card`）。**字段、必填、枚举的真值以
+`generated/card-schema.md` 为准**（由那份 schema 生成）；本文按层讲每一段的意义与设计理由；
 标 **（严）** 的规则违反即校验失败。所有卡内路径均为**卡根内相对路径**，`..` 与绝对路径被拒（严）。
 
 ## 顶层
@@ -83,40 +84,14 @@
 
 ## 段内必填(踩坑最多的一处)
 
-**「这个段可以不写」≠「段内字段可以不填」。** 段是可选的,但一旦写了,下面这些字段一个都不能少
-——少一个整张卡就不合法,而 app 对不合法的卡**不报错、只静默退回活动卡**(见 SKILL.md 第 3 步)。
+**「这个段可以不写」≠「段内字段可以不填」。** 段是可选的,但一旦写了,段里标必填的字段一个都不能少
+——少一个整张卡就读不通,app 会把这个频道按普通文件夹打开(见 SKILL.md 第 3 步)。
 
-下表由 schema 反射生成,不是手抄:
+**清单与枚举取值不在这里抄**:看 `generated/card-schema.md` 的「写了某一段，就必须写全的字段」
+一节,那张表由 app 源码里的 schema 直接生成。这里曾经放过一份手抄的快照,它漏掉了
+`identity.format` 下的三个必填枚举(`orientation` / `persona` / `captions`)——有人照着写卡就踩了。
 
-| 段 | 一旦写了,这些必填 |
-|---|---|
-| `identity` | `format` |
-| `brand` | `tokens` |
-| `brand.tokens` | `colors`, `accent`, `fonts`, `stroke`, `radius`, `grid` |
-| `locks` | `visualStyle`, `motionSound` |
-| `voice` | `default`, `profiles` |
-| `voice.profiles.<名>` | `engine` |
-| `captions` | `highlight`, `maxLines`, `wordsPerLine`, `stroke`(`none`/`soft`/`hard`/`pill`) |
-| `cover` | `config` |
-| `audio` | `bed` |
-| `libraries` | `sound`, `asset`, `scenes` |
-| `libraries.<条目>` | `key`, `path` |
-| `freeze` | `visualTokens`, `voice`, `visualStyle` |
-| `platforms.<平台>` | `enabled` |
-| `pipeline.steps[]` | `key`, `step` |
-| `presentation.sections[]` | `id` |
-| `runtime.endpoints[]` | `id` |
-| `runtime.providers[]` | `capability` |
-| `config.sections[]` | `id`, `name`, `fields` |
-
-### 几个只认枚举的字段
-
-| 字段 | 只接受 |
-|---|---|
-| `identity.format.captions` | `sentence` / `word` / `none` |
-| `captions.stroke` | `none` / `soft` / `hard` / `pill` |
-| `audio.bed.source` | `synth` / `library` |
-| `bundle.demo.license` | `sample-only` / `cc-by` / `inherit` |
+写完用 `channek check <卡目录>` 验,它报的字段路径和生成表一一对应。
 
 > 实测教训:`captions` 段写成 `{style, maxCharsPerLine, docRef}` —— 前两个是自造字段
 > (schema 是 passthrough,收下但没人读),而四个真必填字段一个没填。卡因此不合法,

@@ -33,7 +33,10 @@ sdk.onInit(async init => {
   加载（URL 不可外携，插件停用即失效）。
 - 主题 token 由 init 注入 + `theme:changed` 事件更新；SDK 会帮你应用到 CSS 变量。
 
-## suite 桥 op 全表（封闭白名单，34 条）
+## suite 桥 op 速查（封闭白名单）
+
+> **全集以 `generated/suite-bridge-ops.md` 为准**（由源码生成）。下面按用途摘了常用 op 的
+> 权限与限额，新放开的 op 可能还没写进来——表里查不到先去翻那份生成表。
 
 不在表里的 op 一律 `unknown-op`；通用逃逸口（读任意路径 / exec / 转发任意 IPC）永不进表。
 标 ✍ 的是**写 op**：需 `workspace:write` 权限 + 每 (插件, 频道) 一次性同意闸
@@ -91,6 +94,76 @@ sdk.onInit(async init => {
 - 写请求单条 ≤256KiB；读应答 ≤1MiB（超限 `response-too-large`，大清单在 iframe 内自己虚拟滚动）。
 - suite / rpc / storage 共享每分钟消息总闸；剪贴板独立门（32KiB / 10 次每分）。
 - **桥不是搬运带**：大数据走 capability URL，或「T2 侧持有 + rpc 分页取」。
+
+## 跑起来才会撞到的四条
+
+上面那些是事实，这四条是**事实的后果** —— 每条都有一个「看着像别的毛病」的症状。
+
+### 1. 桥没就绪就发 rpc → 你的历史「凭空消失」
+
+**症状**：界面一片空，跑过的东西像没了；控制台 `Channek sandbox bridge is not initialized`。
+
+**根因**：桥是宿主 `init` 消息带着 `MessagePort` 过来那一刻才建起来的。
+写在模块顶层的 `sdk.rpc(...)` 跑得比握手还早。
+
+**修法**：所有首屏取数放进 `sdk.onInit` 回调。想先画点东西就画**空壳**，别画数据。
+
+```ts
+paint();                       // 空壳先上，别让人对着白屏等握手
+sdk.onInit(() => void boot()); // 数据等桥
+```
+
+### 2. 没有 `allow-forms` → `<form>` 的提交按钮点了没反应
+
+**症状**：按钮能点、能 hover，但什么都不发生，控制台**一条错都没有**。
+
+**根因**：`PLUGIN_SANDBOX = 'allow-scripts allow-same-origin'`
+（`frontend/ui/src/extensions/sandbox/sandbox-policy.ts`）—— **没有 `allow-forms`**，
+浏览器直接吞掉 submit 事件。
+
+**修法**：别用 `<form>`。按钮走 `click`，输入框自己监听 `Enter`。
+
+### 3. 单条 256KiB 是硬墙 → 大数据要么换通道，要么切块
+
+**症状**：一张全尺寸截图、一份长 JSON，rpc 直接 `response-too-large`。
+
+**已有的正路**（优先）：素材走 `channek-media:` capability URL，**根本不过桥**。
+
+**没有 URL 可用时**（比如 T2 现算出来的图）：切块。
+
+```ts
+// T2：先回「有几块」，再按 index 给
+'shot.meta':  async () => ({ totalChunks: Math.ceil(b64.length / 120_000) }),
+'shot.chunk': async ({ index }) => b64.slice(index * 120_000, (index + 1) * 120_000),
+```
+
+一块 12 万字符（约 117KB）留得下 JSON 外壳。**取过就缓存**，否则每次切换都重传；
+要连续播放的，**先把每一块预取完再播**，不然每帧顿一下。
+
+### 4. `catch {}` 会把事故伪装成空状态
+
+**症状**：功能「静悄悄地不工作」，而界面显示得像「本来就没有数据」。
+
+```ts
+try { list = await sdk.rpc('run.list', {}); } catch { /* 没有就空着 */ }   // ✗
+```
+
+桥没就绪、handler 没注册、路径被拦 —— 全都长成「空状态」。**排查时你看不到任何线索。**
+
+**修法**：「读不到」和「没有」必须是两种显示。
+
+```ts
+try {
+  const list = await sdk.rpc('run.list', {});
+  if (!Array.isArray(list)) throw new Error(`回的不是列表：${typeof list}`);
+  rows = list;
+} catch (error) {
+  showError(`读不到记录：${error instanceof Error ? error.message : String(error)}`);
+}
+```
+
+顺带：**host 侧 throw 的消息过不了桥** —— 宿主会把它包成 `handler-failed`。
+要让人看到人话，在 catch 里另发一条事件把 message 带过去。
 
 ## T1 → 自己的 T2（rpc）
 

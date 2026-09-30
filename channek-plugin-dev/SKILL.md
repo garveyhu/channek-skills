@@ -1,6 +1,6 @@
 ---
 name: channek-plugin-dev
-description: 开发一个 Channek 插件：按需求路由到扩展点与信任级（T0 声明 / T1 沙箱 / T2 特权），写 manifest，实现沙箱页或 Extension Host 代码，声明能力 provider 与前置就绪，本地调试并打包发布 .channekplugin。当用户要「写一个 Channek 插件」「给 Channek 加主题 / 图标 / 面板 / 功能区 / 查看器 / 出图 / TTS / 转写 / 发布平台能力」「接一条 capability」「打包发布插件」时使用。Use when developing, debugging, or publishing a Channek plugin.
+description: 开发一个 Channek 插件：按需求路由到扩展点与信任级（T0 声明 / T1 沙箱 / T2 特权），写 manifest，实现沙箱页或 Extension Host 代码，声明能力 provider 与前置就绪，本地调试并打包发布 .channekplugin。当用户要「写一个 Channek 插件」「给 Channek 加主题 / 图标 / 面板 / 功能区 / 查看器 / 出图 / TTS / 转写 / 发布平台能力」「接一条 capability」「打包发布插件」时使用；也管扩展点速查：「Channek 有哪些扩展点」「这个功能该插在哪」「manifest contributes 能写什么键」「suite 桥能调什么 op」「T1 能拿到什么数据」。Use when developing, debugging, or publishing a Channek plugin, or looking up extension points, contribution keys, or sandbox bridge ops.
 ---
 
 # Channek 插件开发
@@ -24,7 +24,7 @@ description: 开发一个 Channek 插件：按需求路由到扩展点与信任�
 3. **给方案再动手**:告诉用户「你要的是 X,我建议做成 Y 级的 Z 插件,因为…」,确认后再写文件。
 4. **说人话**:每个术语第一次出现给一句白话(如「T1 沙箱,意思是你的界面代码被关在一个
    隔离的小房间里跑,只能通过白名单跟 app 说话——所以用户装它不用担心安全」)。
-5. **写完要交代**:怎么装进 app 验证(第 5 步)、改了怎么热重载、发布要做什么。
+5. **写完要交代**:怎么装进 app 验证(第 5 步)、改了之后怎么让 app 用上新代码、发布要做什么。
 
 ## 工作流
 
@@ -38,9 +38,18 @@ T2 是生态灾难。
 |---|---|---|---|
 | 主题 / 图标集 / 导出预设 / 卡模板 | `ui.theme` / `ui.iconTheme` / `media.exportPreset` / `workspace.styleCard` | **T0** | 纯 manifest,零代码 |
 | 文件查看器 / 面板 / 整页功能区 / 内容步工作台 | `ui.fileViewer` / `ui.panel` / `ui.suiteSection` / `ui.contentStep` | **T1** | 沙箱 iframe 里的网页(HTML+JS 自包含) |
-| 出图 / 配音 / 转写 / 转码等**能力** | `capability.provider`(+ 可选 `capability.definition`) | **T2** | 声明式 command/http 调用(可以一行 JS 都没有),或宿主进程里的模块 |
+| 出图 / 配音 / 转写 / 转码等**能力** | `capability.provider`(+ 可选 `capability.definition`) | **T2** | 声明式 command/http 调用(可以一行 JS 都没有)——**要用密钥就只能是这两种**,见下方提醒 |
 | 发布平台 / 后台逻辑 / 读写工作区外的东西 | `publish.platform` / 自定义 | **T2** | Extension Host(Node 进程)`main.cjs` |
 | 命令 / 菜单 / 快捷键 | `ui.command` / `ui.menu` / `ui.keybinding` | T0 声明 + T1/T2 实现 | |
+
+完整的「我要做 X → 插在哪」路由表与「这个需求能不能做成插件」的判断法见 `references/routing.md`；
+贡献键全集在 `references/generated/contribution-keys.md`（由源码生成，数字以它为准）。
+
+> ⚠️ **要用 Channek 密钥库,先看这条再选形态。** 密钥只在**调用发生那一刻**注入调用本身:
+> `command` 注进子进程环境变量、`http` 注进请求头——**没有「注给宿主进程里的模块」这一种**。
+> 所以写在 `entries.main` 里的 T2 代码拿不到密钥(`credentialRef` 读到的是密钥 id 不是密钥),
+> 而能力又只能从 T1 沙箱侧发起(T2 没有调用口)。两条合起来把架构定死了:**流程归沙箱驱动、
+> host 退成原语**。完整对照表与源码出处见 `references/capability-provider.md`。
 
 **零代码路线(推荐新手从这里进)**——这三种一行代码都不用写:
 
@@ -63,6 +72,9 @@ T2 是生态灾难。
 - T1 要 `apiVersion: "1"` + `entries.sandbox`;T2 要 `apiVersion` +(有代码时)`entries.main`。
 - 权限按需最小化;命令 id 必须带 `<pluginId>.` 前缀。
 - `description` 是插件市场里用户看到的那一行:说「装了它我能做什么」,不说实现细节。
+
+写完跑 **`channek check <插件目录>`**:它用的是 app 装插件时同一份清单校验,另外会报出
+会生效的字段里写了本机路径。规则全集见 `references/generated/manifest-rules.md`。
 
 ### 3. 实现
 
@@ -89,7 +101,19 @@ T2 是生态灾难。
 ln -s <你的开发目录> ~/.channek/plugins/<manifest.id>   # 软链是受支持的一等开发流
 ```
 
-然后:设置 → 第三方插件 → 重新扫描 → 启用。manifest 与资源改动会自动热重载。排错速查:
+然后:设置 → 第三方插件 → 重新扫描 → 启用。**改完之后 app 用不用得上新代码,分三种情况**:
+
+| 改了什么 | 怎么让它生效 |
+|---|---|
+| T0 的 manifest / 资源 | 自动重扫即可 |
+| T1 沙箱页(html / css / js) | 已经挂着的 iframe **不会自己重载**——重载整个窗口(停用再启用不一定够) |
+| T2 的 `main` 代码 | **必须重启 app**。宿主进程里的模块被 Node 缓存,停用再启用、改 manifest 都冲不掉 |
+| T1 / T2 的 manifest | 改了清单会改签名摘要,插件会停在「待批准」,要重新信任一次 |
+
+判断「我看到的是不是旧代码」:在新代码里加一条只有新版才会发的可观察信号(一行日志、一个新字段),
+看到它才算换过来了——「调用返回成功」判不出来,旧代码一样返回成功。
+
+排错速查:
 
 | 症状 | 先查 |
 |---|---|
@@ -110,6 +134,7 @@ ln -s <你的开发目录> ~/.channek/plugins/<manifest.id>   # 软链是受支�
 
 ## 自检清单(提交前逐条过)
 
+- [ ] `channek check <插件目录>` 通过(零错误;提醒逐条看过)
 - [ ] id 点分小写且与目录名一致;不含 `channek.` 前缀;展示名不冒充官方
 - [ ] 信任级选到了**够用的最低档**;权限按需最小化
 - [ ] T0 无 entries / permissions;T1 脚本全部外部文件、SDK 打进 bundle
@@ -117,12 +142,22 @@ ln -s <你的开发目录> ~/.channek/plugins/<manifest.id>   # 软链是受支�
 - [ ] 设置项的 `default` / `program` 没有任何本机绝对路径;「所有用户都一样」的东西自带在包里
       (`{{pluginDir}}/...`),只把「因机因人而异」的三类留给用户填:工具路径 · 私有资产 · 调参
 - [ ] 密钥走 `credentials` 声明(值永不落盘),不走普通设置拼进 env / header
+- [ ] **没有在 T2 host 里读 `credentialRef` 当密钥用**——那读到的是密钥 id,发出去必 401
+- [ ] 要串多步能力调用的,流程写在**沙箱侧**(`sdk.suite.invokeCapability`),不是 host
+- [ ] T1 首屏取数在 `sdk.onInit` 里,不在模块顶层(桥没就绪时 rpc 全抛)
+- [ ] 没有用 `<form>` 提交(沙箱无 `allow-forms`,submit 事件压根不触发)
+- [ ] 过桥的单条数据 <256KiB;大数据走 `channek-media:` URL 或自己切块
+- [ ] **没有 `catch {}` 吞掉取数失败**——「读不到」要和「没有」显示成两种东西
+- [ ] 能力调用的超时 < provider 的 `timeoutMs`,且重试后的总和也小于它
 - [ ] 声明了 `plugin.requirement` 探测;有 npm 依赖时带 `package-lock.json`
 - [ ] 命令写了 `description` / `keywords`——否则 app 内的 AI 按用户的说法搜不到你的命令
 - [ ] 用 `channek caps` / `channek doctor` 验过:能力列出、徽章就绪、`channek invoke` 真跑通
 
 ## References
 
+- `references/routing.md`——「我要做 X → 插在哪」路由表 + 能不能做成插件的判断法
+- `references/decl-contracts.md`——常用扩展点的 decl 字段摘要
+- `references/generated/`——**由 Channek 源码生成、同步进来的契约表**(贡献键 / suite 桥 op / 清单校验规则 / 主题 token),数字与名字以这里为准
 - `references/manifest-reference.md`——manifest 全字段 + 校验规则速查
 - `references/trust-tiers.md`——T0/T1/T2 各自能干什么、安全边界、选级判据
 - `references/sandbox-bridge.md`——T1 沙箱运行时、suite 桥操作全表、限额与错误码

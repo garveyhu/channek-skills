@@ -7,8 +7,8 @@
 **English** · [简体中文](README.zh-CN.md)
 
 ![Agent Skills](https://img.shields.io/badge/agent%20skills-SKILL.md-333333?style=flat-square)
-![Skills](https://img.shields.io/badge/skills-3-555555?style=flat-square)
-![Contract](https://img.shields.io/badge/contract-synced%20with%20the%20app-005A9C?style=flat-square)
+![Skills](https://img.shields.io/badge/skills-2-555555?style=flat-square)
+![Contract](https://img.shields.io/badge/contract-generated%20from%20source-005A9C?style=flat-square)
 ![License](https://img.shields.io/badge/license-Apache--2.0-1A1A1A?style=flat-square)
 
 </div>
@@ -23,13 +23,12 @@
 
 ## What's here
 
-Three skills, one job each:
+Two skills, one job each:
 
 | skill | What it does | When it wakes |
 |---|---|---|
 | [`channek-card-dev`](channek-card-dev/SKILL.md) | Author or modify a **style card**: `card.json` layer by layer, portability red lines, packing a `.channekcard` | "write a style card" · "make a channel template" · "package my channel for distribution" |
-| [`channek-plugin-dev`](channek-plugin-dev/SKILL.md) | Build a **plugin**: pick a trust tier → manifest → implement (T1 sandbox / T2 privileged) → debug → pack & publish | "write a Channek plugin" · "add a theme / section / capability" |
-| [`channek-extension-points`](channek-extension-points/SKILL.md) | The **"I want to build X → where does it plug in"** routing table, plus every contribution key, bridge op and decl at a glance | "what extension points are there" · "where does this feature go" · "what can the suite bridge call" |
+| [`channek-plugin-dev`](channek-plugin-dev/SKILL.md) | Build a **plugin**: pick a trust tier → manifest → implement (T1 sandbox / T2 privileged) → debug → pack & publish | "write a Channek plugin" · "add a theme / section / capability" · "where does this feature plug in" |
 
 Every skill shares one skeleton. `SKILL.md` is the workflow the agent executes — steps, trade-offs,
 a self-check list. `references/` holds what it loads on demand: contract tables (field tables, the
@@ -48,7 +47,7 @@ cd channek-skills
 
 # Into one project — recommended: active only where you develop cards / plugins
 mkdir -p path/to/project/.claude/skills
-for s in channek-card-dev channek-plugin-dev channek-extension-points; do
+for s in channek-card-dev channek-plugin-dev; do
   ln -s "$(pwd)/$s" path/to/project/.claude/skills/
 done
 
@@ -66,11 +65,29 @@ is self-contained with its `references/`, offline included.
 
 ## One source of truth with the app
 
-The contract content here — manifest validation rules, contribution keys, the suite-bridge op
-allowlist, the card schema — is aligned with the app's public contracts (`@channek/plugin-kit`,
-`@channek/sandbox-sdk`, the card format spec) and tracks app releases. When a table here disagrees
-with the app you installed, **the app's validator wins — it is the only party that can reject
-you.** Issues welcome.
+The tables that change with the app — contribution keys, the suite-bridge op allowlist, manifest
+validation rules, theme tokens, card fields — are **not hand-written**. They are generated from the
+Channek source and copied verbatim into each skill's `references/generated/`; the skill bodies
+reference them instead of quoting numbers.
+
+To validate your work, use the command that ships with the app. It applies the same rules the app does:
+
+```bash
+channek check <channel dir | card dir | plugin dir>
+```
+
+When a table here disagrees with the app you installed, **the app's validator wins — it is the only
+party that can reject you.** Issues welcome.
+
+### Maintenance
+
+```bash
+node scripts/sync-contracts.mjs --from <path to the Channek repo>   # sync generated tables (--check to verify only)
+node scripts/check-examples.mjs                                     # validate the example card with channek check
+```
+
+Commit only when both pass. The example card is the most-copied file here; if it is invalid, everyone
+who copies it hits the same wall.
 
 ## Where this sits
 

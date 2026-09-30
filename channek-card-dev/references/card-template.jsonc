@@ -1,5 +1,7 @@
 // 可抄的完整示例卡：口播快剪频道（6 步流水线 · 无分镜 / 无素材生成 / 无封面）
-// 抄的时候：改 id/name/slug，删掉用不上的段——顶层必填只有前 5 个字段。
+// 抄的时候：改 id/name/slug，删掉用不上的段——顶层必填只有前 5 个字段；
+// 但**某段一旦写了，段内必填就要写全**（清单见 references/generated/card-schema.md）。
+// 写完跑 `channek check <卡目录>`，它用的是 app 读卡时同一份判据。
 // 卡目录形态：
 //   acme.talkfast/
 //   ├── card.json          ← 本文件
@@ -15,14 +17,22 @@
   "cardVersion": "1.0.0",
 
   "identity": {
-    "positioning": "口播观点频道：单人出镜 / 快节奏剪辑 / 周更",
-    "audience": "对效率工具感兴趣的中文观众"
+    "niche": "口播观点频道：单人出镜 / 快节奏剪辑 / 周更",
+    "audience": "对效率工具感兴趣的中文观众",
+    // 写了 identity 就必须写 format，三个都是枚举：
+    // orientation: landscape / portrait / square · persona: none / avatar / real · captions: sentence / word / none
+    "format": { "orientation": "portrait", "persona": "real", "captions": "sentence" }
   },
 
   "brand": {
     "tokens": {
+      // 写了 brand.tokens 就六项全写：colors / accent / fonts / stroke / radius / grid
       "colors": { "ink": "#1a1a1a", "paper": "#faf7f2", "accent-warm": "#c96f4a" },
-      "accent": "accent-warm"
+      "accent": "accent-warm",
+      "fonts": { "display": ["Source Han Sans"], "body": ["Source Han Sans"], "mono": ["JetBrains Mono"] },
+      "stroke": 2,
+      "radius": 12,
+      "grid": 8
     }
   },
 
@@ -33,7 +43,8 @@
     }
   },
 
-  "captions": { "style": "bottom-center", "maxCharsPerLine": 18 },
+  // 写了 captions 就四项全写；stroke 是枚举 none / soft / hard / pill
+  "captions": { "highlight": true, "maxLines": 2, "wordsPerLine": 14, "stroke": "soft" },
 
   "pipeline": {
     "steps": [

@@ -7,8 +7,8 @@
 [English](README.md) · **简体中文**
 
 ![Agent Skills](https://img.shields.io/badge/agent%20skills-SKILL.md-333333?style=flat-square)
-![Skills](https://img.shields.io/badge/skills-3-555555?style=flat-square)
-![Contract](https://img.shields.io/badge/contract-synced%20with%20the%20app-005A9C?style=flat-square)
+![Skills](https://img.shields.io/badge/skills-2-555555?style=flat-square)
+![Contract](https://img.shields.io/badge/contract-generated%20from%20source-005A9C?style=flat-square)
 ![License](https://img.shields.io/badge/license-Apache--2.0-1A1A1A?style=flat-square)
 
 </div>
@@ -22,13 +22,12 @@
 
 ## 都有什么
 
-三个 skill，各管一件事：
+两个 skill，各管一件事：
 
 | skill | 干什么 | 什么时候醒 |
 |---|---|---|
 | [`channek-card-dev`](channek-card-dev/SKILL.md) | 写或改一张**风格卡**：`card.json` 逐层过、可移植红线自检、打包 `.channekcard` | 「写一张风格卡」·「做个频道模板」·「把我的频道打包分发」 |
-| [`channek-plugin-dev`](channek-plugin-dev/SKILL.md) | 造一个**插件**：选信任级 → manifest → 实现（T1 沙箱 / T2 特权）→ 调试 → 打包发布 | 「写一个 Channek 插件」·「加个主题 / 功能区 / 能力」 |
-| [`channek-extension-points`](channek-extension-points/SKILL.md) | **「我要做 X → 该插在哪」**的路由表，外加全部贡献键、桥 op 与 decl 契约速查 | 「有哪些扩展点」·「这个功能该插在哪」·「suite 桥能调什么」 |
+| [`channek-plugin-dev`](channek-plugin-dev/SKILL.md) | 造一个**插件**：选信任级 → manifest → 实现（T1 沙箱 / T2 特权）→ 调试 → 打包发布 | 「写一个 Channek 插件」·「加个主题 / 功能区 / 能力」·「这个功能该插在哪」 |
 
 每个 skill 同一副骨架。`SKILL.md` 是 agent 照着执行的工作流——步骤、取舍、自检清单；
 `references/` 是它按需翻开的部分：契约速查（字段表、桥 op 白名单、校验规则）与值得照抄的模板
@@ -45,7 +44,7 @@ cd channek-skills
 
 # 装进某个项目——推荐：只在开发卡 / 插件的项目里生效
 mkdir -p <你的项目>/.claude/skills
-for s in channek-card-dev channek-plugin-dev channek-extension-points; do
+for s in channek-card-dev channek-plugin-dev; do
   ln -s "$(pwd)/$s" <你的项目>/.claude/skills/
 done
 
@@ -62,9 +61,26 @@ ln -s "$(pwd)/channek-plugin-dev" ~/.claude/skills/
 
 ## 契约与 app 同源
 
-这里的契约内容——manifest 校验规则、贡献键、suite 桥 op 白名单、卡 schema——对齐 app 的公开契约
-（`@channek/plugin-kit` / `@channek/sandbox-sdk` / 卡格式规范），随 app 版本同步。哪天某张表和你装的
-app 说法不一，**以 app 的校验器为准——它是唯一会拒绝你的那一方**。欢迎提 issue。
+会随 app 变的契约表——贡献键、suite 桥 op 白名单、清单校验规则、主题 token、卡字段——**不是手写的**：
+它们由 Channek 源码生成，原样同步进各 skill 的 `references/generated/`。skill 正文只引用这些表，
+不自己写数字。
+
+动手校验用 app 自带的命令，它和 app 用的是同一份判据：
+
+```bash
+channek check <频道目录|卡目录|插件目录>
+```
+
+哪天某张表和你装的 app 说法不一，**以 app 的校验器为准——它是唯一会拒绝你的那一方**。欢迎提 issue。
+
+### 维护
+
+```bash
+node scripts/sync-contracts.mjs --from <Channek 仓库>          # 同步生成表（加 --check 只检查）
+node scripts/check-examples.mjs                               # 用 channek check 校验示例卡
+```
+
+两条都绿了再提交。示例卡是被照抄得最多的东西，它不合法，每个照抄的人都踩同一个坑。
 
 ## 它在整盘棋里的位置
 

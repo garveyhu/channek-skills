@@ -1,6 +1,6 @@
 ---
 name: channek-card-dev
-description: 开发、修改、校验并打包一张 Channek 风格卡（card.json / .channekcard）。当用户要「写一张风格卡 / style card」「做一个 Channek 频道模板」「声明出片流程 pipeline」「把频道打包分发 / 一键复刻」「修卡的 requires / layout / presentation」时使用。Use when developing a Channek style card, channel template, or packaging a .channekcard bundle.
+description: 开发、修改、校验并打包一张 Channek 风格卡（card.json / .channekcard）。当用户要「写一张风格卡 / style card」「做一个 Channek 频道模板」「声明出片流程 pipeline」「把频道打包分发 / 一键复刻」「修卡的 requires / layout / presentation」「新建一个频道」「打开文件夹后它不是频道 / 卡读不出来」时使用。Use when developing a Channek style card, creating a channel, debugging a card that won't load, or packaging a .channekcard bundle.
 ---
 
 # Channek 风格卡开发
@@ -57,7 +57,9 @@ description: 开发、修改、校验并打包一张 Channek 风格卡（card.js
 
 ### 2. 写 card.json
 
-骨架从 `references/card-template.jsonc` 抄,字段表查 `references/card-schema.md`。要点:
+骨架从 `references/card-template.jsonc` 抄(它过得了 app 的校验);**字段、必填、枚举查
+`references/generated/card-schema.md`**——那张表由 app 源码里的 schema 生成,和 app 读卡同一份判据。
+`references/card-schema.md` 讲的是每一段为什么这么设计。要点:
 
 - **顶层必填只有 5 个**:`schema: "channek.stylecard"` · `formatVersion: 2` · `id` · `name` · `slug`。
   其余全部可选;**某段一旦写了,段内引用会被严格校验**(如写了 `voice`,那 `voice.default`
@@ -73,40 +75,29 @@ description: 开发、修改、校验并打包一张 Channek 风格卡（card.js
 
 ### 3. 先过 schema(机器判 · 最硬的一道闸)
 
-**写完 card.json 的第一件事,是用 app 自己的 zod schema 验一遍,不是用你自己写的检查脚本。**
+**写完 card.json 的第一件事,是用 app 自己的判据验一遍,不是用你自己写的检查脚本。**
 自写脚本查得了路径引用和可移植红线,查不了字段级的结构合法性——两者不是一回事。
 
-在 Channek 源码仓的 `shared/style-card` 目录下跑(`<CHANNEK_REPO>` 换成本机路径):
-
 ```bash
-cd <CHANNEK_REPO>/shared/style-card
-cat > .validate.tmp.mjs <<'EOF'
-import { validateStyleCard } from './src/card-schema/card.schema.ts';
-import { readFileSync } from 'node:fs';
-const r = validateStyleCard(JSON.parse(readFileSync(process.argv[2], 'utf8')));
-if (r.ok) console.log('✅ 通过');
-else { console.log(`❌ ${r.issues.length} 条:`); r.issues.forEach(i => console.log(' ·', i.path || '(根)', '→', i.message)); }
-EOF
-npx tsx .validate.tmp.mjs /绝对路径/风格卡/card.json; rm -f .validate.tmp.mjs
+channek check <频道目录或卡目录>     # 随 Channek app 安装;频道目录会顺着 .channek/workspace.json 找到卡
 ```
 
-**为什么这道闸必须排在最前**:卡不合 schema 时,app 的表现**不是报错,是装作没事**——
-频道照常打开,但这张卡进不了卡库,于是频道的卡绑定解析不出来,整条链一路退回「活动卡」
-(= 上一个打开过的频道那张卡)。
+它报的是字段路径(如 `identity.format.persona:Invalid enum value`),对照
+`references/generated/card-schema.md` 就能改。零错误才算过。它还会提醒频道目录名与卡 id 不一致。
 
-用户实际看到的症状是这三条:
+**为什么这道闸必须排在最前**:卡不合 schema 时,app 打开这个文件夹后**不会当成频道**——
+它会先按普通文件夹打开,顶上一条横幅写着「这里的风格卡没能认出来」和出错的字段。
+横幅离你写卡的那一刻已经隔了好几步,而且只有打开 app 才看得见;`channek check` 在写完那一刻就告诉你。
 
 | 他看到的 | 真实原因 |
 |---|---|
-| 设置页里画风锁 / 配音 / 字幕全是**别的频道**的内容 | 这张卡没进卡库 |
-| 插件区「本频道在用 · 0」,没有任何「这张卡要什么」的提示 | `cardRequiredPlugins` 查回 0 条 |
-| 「当前频道」写着本频道名,「风格卡」却写着**别的卡名** | 退回了活动卡 |
-
-**没有一条症状指向「你的卡第 N 行写错了」。** 实测这三条会把人(和 AI)引向
-「app 坏了 / 注册表错了 / 窗口状态乱了」,查很久都查不到卡上。跑一次校验,10 秒定位。
+| 打开文件夹后是普通文件夹,横幅写「风格卡没能认出来」加一串字段 | 卡不合 schema,按横幅上的字段改,改完点「重新读取」 |
+| 横幅写「卡库里已有一张同 id 的卡」 | 频道是从别的频道复制来的,没改 `id`——两张卡撞了主键 |
+| 频道管理器里它显示成「普通文件夹」 | 同上两条之一:卡没被认下来 |
 
 **最容易踩的一类**:**可选段一旦写了,段内必填字段一个都不能少**。
-「这个段可以不写」≠「段内字段可以不填」。完整清单见 `references/card-schema.md` 的「段内必填」表。
+「这个段可以不写」≠「段内字段可以不填」。完整清单见 `references/generated/card-schema.md` 的
+「写了某一段，就必须写全的字段」一节——`identity.format` 三个枚举、`brand.tokens` 六项都在那里。
 
 ### 4. 过可移植红线(每次保存前自检)
 
@@ -172,7 +163,9 @@ npx tsx .validate.tmp.mjs /绝对路径/风格卡/card.json; rm -f .validate.tmp
 
 **先教用户把卡用起来**(比打包更优先):
 
-1. 在 app 里「新建频道 → 选这张卡」,或把卡应用到他现有的文件夹;
+1. 卡已经在频道目录里(`<频道>/风格卡/card.json`,或 `.channek/workspace.json` 指向的卡目录)时,
+   在 app 里**直接「打开文件夹」**选这个频道目录——app 会当场认下这张卡并绑定,频道就出现了;
+   从卡库起步的,用「新建频道 → 选这张卡」,或把卡应用到他现有的文件夹;
 2. 打开频道看灯轨:步骤序和他描述的一致吗?缺插件的步会显示占位卡(「由插件 X 提供 · 未安装」),
    这是正常的诚实降级,不是坏了。
 
@@ -196,7 +189,8 @@ npx tsx .validate.tmp.mjs /绝对路径/风格卡/card.json; rm -f .validate.tmp
 
 ## References
 
-- `references/card-schema.md`——card.json 全字段表(按层)
+- `references/generated/card-schema.md`——**卡字段表(由 app 源码生成)**:整链必填 · 写了某段就必须写全的字段 · 全部字段
+- `references/card-schema.md`——每一段为什么这么设计(讲道理,字段真值以生成表为准)
 - `references/pipeline-and-artifacts.md`——pipeline / layout / 工件契约与解耦原理
 - `references/requires-and-secrets.md`——requires 依赖声明、能力偏好链、密钥推导
 - `references/card-template.jsonc`——可抄的完整示例卡(口播快剪 6 步频道)
