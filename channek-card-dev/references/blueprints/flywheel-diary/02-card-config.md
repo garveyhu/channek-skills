@@ -1,54 +1,88 @@
-# 02 · card.json 实战：891 行卡是怎么排布的
+# 02 · 频道卡实战：912 行的 channel.json 是怎么排布的
 
-> 字段的**语法**查 [`../../card-schema.md`](../../card-schema.md)。这一章讲**排布**——
-> 一张成熟的卡各段占多大比重、命名怎么定、值放哪一层。
+> 字段的**语法**查 [`../../card-schema.md`](../../card-schema.md)（真值以
+> [`../../generated/card-schema.md`](../../generated/card-schema.md) 为准）。这一章讲**排布**——
+> 一份成熟的频道卡各段占多大比重、命名怎么定、值放哪一层。
 
 ## 全卡比例尺（先看这个）
 
-飞轮日记的 `card.json` 共 **891 行**，`cardVersion: "1.0.0"`。各段规模：
+飞轮日记的 `channel.json` 共 **912 行**，`card.version: "1.0.0"`。各段规模：
 
 | 段 | 行数 | 占比 | 一句话 |
 |---|---|---|---|
-| 身份证八件套 | 8 | 1% | schema / formatVersion / id / name / slug / createdAt / face / cardVersion |
-| `identity` | 15 | 2% | 定位 / 人设 / 策略 |
-| `brand` | 58 | 7% | design token + IP 吉祥物 + 代码配色 |
-| `cover` · `platforms` | 23 | 3% | 封面套件指针 + 四平台开关 |
-| `pipeline` | 41 | 5% | 九步（**只是 key→step 映射**） |
-| `layout` | 103 | 12% | 目录 + 22 条工件落点 + 8 个资源库 + 9 条文档 |
+| 外壳 + 频道身份 | 5 | 1% | schema / formatVersion / id / slug / name |
+| `card` | 7 | 1% | 卡自己的身份：id / slug / version / face / createdAt |
+| `profile` · `format` | 15 | 2% | 定位 / 人设 / 策略 + 横竖屏 / 字幕颗粒 |
+| `platforms` · `cover` | 23 | 3% | 四平台开关 + 封面套件指针 |
+| `brand` | 58 | 6% | design token + IP 吉祥物 + 代码配色 |
+| `pipeline` | 41 | 4.5% | 九步（**只是 key→step 映射**） |
+| `layout` | 104 | 11% | 目录 + 22 条工件落点 + 8 个资源库 + 9 条文档 |
 | `prompts` | 7 | 1% | 五份提示词登记 |
-| **`config`** | **460** | **52%** | **8 组 54 项创作参数** |
+| **`config`** | **460** | **50%** | **8 组 54 项创作参数** |
 | `presentation` | 14 | 2% | 三个功能区 |
-| `meta` | 10 | 1% | 上架物料 |
-| `requires` | 110 | 12% | 9 条能力 + 5 个插件 |
+| `requires` | 105 | 12% | 9 条能力 + 4 个全局插件 |
+| `plugins` | 3 | — | 1 个频道插件 |
 | `runtime` | 3 | — | **刻意留空** |
+| `pluginSettings` | 13 | 1% | 按插件 id 旁挂 |
+| `meta` | 10 | 1% | 上架物料 |
 | `bundle` | 24 | 3% | 5 条剔除声明 |
-| `pluginSettings` | 13 | 2% | 按插件 id 旁挂 |
+| `agent` | 5 | 1% | 给 agent 的三个入口 |
+| `questions` | 13 | 1% | 用卡开频道时问的三道题 |
 
-**两个数字要记住**：`config` 占一半，`pipeline` 只占 5%。
+**两个数字要记住**：`config` 占一半，`pipeline` 不到 5%。
 
 新手直觉是反的——以为写卡主要是设计流程。**流程只是九行映射；真正的工作量在「把这个频道的
 每一条判据变成一个可读可改的配置项」。**
 
-## 身份证：两个版本号，一个人话标签
+## 身份：两层，各管一件事
 
 ```json
 {
-  "schema": "channek.stylecard",
-  "formatVersion": 2,          // 生态级 schema 版本，全生态统一
-  "id": "<作者>.<频道>",        // 反域名式，小写点分
-  "name": "飞轮日记",
-  "slug": "feilun-diary",      // ASCII 短名，路径模板 {slug} 的取值来源
-  "createdAt": "2026-07-24T05:35:04.964Z",
-  "face": "v2-鲜艳潮IP",        // ← 人话字符串，不是枚举
-  "cardVersion": "1.0.0"       // 这张卡自己的版本，配 CHANGELOG
+  "schema": "channek.channel",
+  "formatVersion": 1,             // 生态级 schema 版本，全生态统一
+  "id": "ws_s1wapvwedqmb",        // ← 这个频道在这台机器上的身份：app 首次打开时生成写回
+  "slug": "ch-wedqmb",            // ← 同上。分发的卡里不写，导出时自动剥掉
+  "name": "飞轮日记",              // 唯一必填
+  "card": {
+    "id": "<作者>.<频道>",          // 卡自己的身份：反域名式，小写点分
+    "slug": "feilun-diary",       // ASCII 短名
+    "version": "1.0.0",           // 这张卡自己的版本，配 CHANGELOG
+    "face": "v2-鲜艳潮IP",          // ← 人话字符串，不是枚举
+    "createdAt": "2026-07-24T05:35:04.964Z"
+  }
 }
 ```
 
-- **`formatVersion` 与 `cardVersion` 分开两个字段**——前者是生态契约，后者是你的发版号。
-- **`face` 是一句话标签，带版本前缀**。同作者其它卡分别是 `"v1-卡通经济学"` /
+- **两层身份分开**：顶层 `id` / `slug` 是「这个频道」——收卡人用你的卡开出来的是另一个频道，
+  所以它不出门；`card.id` 是「这张卡」——血缘、市场、「从原卡更新」都认它，所以它跟着卡走。
+  **写给别人用的卡写 `card.id`，顶层 `id` 留给 app。** 最小合法频道卡只要 `name` 一个字段。
+- **`formatVersion` 与 `card.version` 分开两个字段**——前者是生态契约，后者是你的发版号。
+- **`card.face` 是一句话标签，带版本前缀**。同作者其它卡分别是 `"v1-卡通经济学"` /
   `"纸白编辑感·墨绿点睛"` / `"暖灯深夜·纸感人声"`。它回答「这张卡长什么脸」，一眼可辨。
-- 连**卡目录名都是声明的**：`.channek/workspace.json` 里 `"card": "风格卡"`。
-  `风格卡` 这个名字本身可换。
+- **卡根就是频道根**。`channel.json` 是内核唯一认的固定文件名，除此之外每个目录名都由卡声明——
+  旧结构里那个写死的 `风格卡/` 子目录已经退役。
+
+## `profile` 与 `format`：人设归人设，格式归做法
+
+```json
+"profile": {
+  "niche": "AI 底层逻辑 / 前沿趋势 / 深度拆解（认知向）",
+  "persona": "带你看透技术泡沫的 AI 深度拆解者",
+  "slogan": "…", "mindWord": "认知飞轮 / 底层逻辑", "strategy": "浅引流 … → 深收割 …",
+  "audience": "…", "pillars": "…", "bio": "…"
+},
+"format": { "orientation": "landscape", "persona": "none", "captions": "sentence" }
+```
+
+旧卡把这两样捆在一个 `identity` 段里，拆开是因为**它们的变化率不同**：
+
+- **`profile` 是「这个频道是谁」**——换一个人用这套做法，这些值全都该换。分享时它们不当身份带走，
+  可以被 `questions` 点名、导出时撤下原值改作示例（见下文「问卷」）。
+- **`format` 是做法的一部分**——横竖屏 / 数字人 / 字幕颗粒决定了流程怎么跑，换个人照样适用。
+  它只对视频频道有意义，所以是可选段，写了就得三项写全。
+
+`slogan` / `mindWord` / `strategy` 三个字段**不是装饰**：它们会渲进 AGENTS.md 的「这个频道做什么」，
+写稿和选题的 AI 往它上打。`pillars` 则只当备注显示——渲染器照实标成「备注·不是硬约束」。
 
 ## `pipeline`：它是重映射层，不是流程定义
 
@@ -71,7 +105,7 @@
 }
 ```
 
-**这张成熟卡的每一步只用了两个字段**（schema 还允许 `config` 与 `optional`，它没用上）：
+**这份成熟卡的每一步只用了两个字段**（schema 还允许 `config` 与 `optional`，它没用上）：
 
 - **`step`** = 内核 / 插件提供的步 id。**行为定义在插件里，不在卡里。**
 - **`key`** = 这张卡给这一步起的本地名。它是灯轨上报时用的那个 key
@@ -99,47 +133,52 @@
 
 | 声明位置 | 路径相对谁 |
 |---|---|
-| `layout.cardAssets.*` · `prompts.*` · `config` 里的 `fileRef` | **卡根**（`风格卡/`） |
-| `layout.contentDir` · `layout.sections[].path` · `layout.detect.anyOf` | **频道根** |
+| `layout.cardAssets.*` · `layout.contentDir` · `layout.sections[].path` · `layout.detect.anyOf` · `prompts.*` · `config` 里的 `fileRef` · `agent.*` · `plugins[]` · `bundle.omit[].path` · `meta.cover` / `meta.preview` | **频道根**（= 卡根） |
 | `layout.artifacts.*` | **条目目录**（`<contentDir>/<entryDirName>/`） |
 | `brandAssets.banners[]` / `avatar[]` | **`brandAssets.root`** |
 
-四套。写卡时逐条对照，别凭感觉。
+三套。旧卡有四套——卡住在子目录里时，「卡根」和「频道根」是两回事，`prompts` 相对前者、
+`contentDir` 相对后者，最容易写错的就是这一对。频道卡把卡根并进了频道根，这一套就没了。
+剩下三套写卡时仍要逐条对照，别凭感觉。
 
-### `cardAssets.libraries`：英文语义名 → 中文实际目录名
+### `cardAssets.libraries`：英文语义名 → 实际目录
 
 ```json
 "libraries": {
-  "sound":      "BGM音效",
-  "asset":      "素材库",
-  "scenes":     "scenes",
-  "reusable":   "复用片段",
+  "sound":      "brand/audio",
+  "asset":      "brand/library",
+  "scenes":     "sop/kit/scenes",
+  "reusable":   "sop/kit/snippets",
   "ipActions":  "动作库",      // ← 子目录名（在 brandAssets.root/<IP名>/ 之下）
   "soundIntro": "进场",        // ← 子目录名（相对 sound）
   "soundBgm":   "背景乐",      // ← 子目录名（相对 sound）
-  "skills":     "skills"
+  "skills":     "sop/skills"
 },
 "pipelineFixedSounds": [ "whoosh.wav", "pop.wav", "进场.wav" ]
 ```
 
-**键是英文语义名，值是中文实际目录名。** 脚本一律拿 `libraries.sound` 说话，永不写「BGM音效」。
-这样目录名想改就改，代码不动。
+**键是英文语义名，值是实际目录。** 脚本一律拿 `libraries.sound` 说话，永不写 `brand/audio`。
+这样目录想挪就挪，代码不动——迁到频道卡时整套目录从 `BGM音效/` `素材库/` 搬到 `brand/` 下，
+改的只是这几行值，按 `libraries.*` 取目录的代码不用动。
 
-⚠️ 那三个**子目录名**（`ipActions` / `soundIntro` / `soundBgm`）不是卡根路径，别照抄成一级目录。
+⚠️ 那三个**子目录名**（`ipActions` / `soundIntro` / `soundBgm`）不是频道根路径，别照抄成一级目录。
+
+> skill 目录现在有两处可以声明：新写法是 `agent.skills`（见下文），写了就覆盖
+> `libraries.skills`。飞轮日记两处都写了同一个值，是迁移时为兼容旧读法留的。
 
 ### `cardAssets.docs`：键名是「旧段位的点号路径」
 
 ```json
 "docs": {
-  "brand.tokensRef":           "品牌套件/tokens.dtcg.json",
-  "locks.visualStyle.docRef":  "风格锁/画风锁.md",
-  "locks.motionSound.docRef":  "风格锁/动效音线锁.md",
-  "captions.docRef":           "品牌套件/字幕样式/README.md",
-  "docs.charter":              "创作宪章.md",
-  "docs.ipBrief":              "品牌套件/品牌文档/IP定位书.md",
-  "docs.brandSpec":            "品牌套件/品牌文档/品牌规范.md",
-  "docs.engineBlocks":         "复用片段/引擎积木速查.md",
-  "docs.readme":               "README.md"
+  "brand.tokensRef":           "brand/tokens.dtcg.json",
+  "locks.visualStyle.docRef":  "brand/locks/画风锁.md",
+  "locks.motionSound.docRef":  "brand/locks/动效音线锁.md",
+  "captions.docRef":           "brand/字幕样式/README.md",
+  "docs.charter":              "channel.md",
+  "docs.ipBrief":              "brand/品牌文档/IP定位书.md",
+  "docs.brandSpec":            "brand/品牌文档/品牌规范.md",
+  "docs.engineBlocks":         "sop/kit/snippets/引擎积木速查.md",
+  "docs.readme":               "sop/README.md"
 }
 ```
 
@@ -149,12 +188,13 @@
 **已经不存在的 `locks` 段**下。为什么？因为机器值搬进了 `config` 段，但人读判据留在 md 里：
 
 ```
-config.sound（15 个机器值）  ←hint 指向→  docs["locks.motionSound.docRef"] → 风格锁/动效音线锁.md
+config.sound（15 个机器值）  ←hint 指向→  docs["locks.motionSound.docRef"] → brand/locks/动效音线锁.md
 ```
 
 `config.sound` 那一组的 hint 直写：「动效音线锁的机器值（**原 locks.motionSound**·人读判据在锁文档）」。
 
-**段位迁移了，引用名不变，老代码不断。** 这是可迁移性的一个范例做法。
+**段位迁移了，引用名不变，老代码不断。** 这是可迁移性的一个范例做法——
+从旧卡迁到频道卡又验证了一次：九个值的路径全换了，九个键一个没动。
 
 > 前 8 个键是[内核认识的固定挂载点](03-agents-md.md#layoutcardassetsdocs-的八个挂载点)，
 > 会渲进 AGENTS.md 的「频道的脸与法」节。第 9 个 `docs.engineBlocks` 是自造键——照样能挂，
@@ -183,7 +223,7 @@ config.sound（15 个机器值）  ←hint 指向→  docs["locks.motionSound.do
   "channek.slices":            "分发/切片"
   // …共 22 条
 },
-"detect": { "anyOf": [ "内容/3-内容工作台" ] }
+"detect": { "anyOf": [ "work/runs" ] }
 ```
 
 **四条命名约定：**
@@ -197,26 +237,36 @@ config.sound（15 个机器值）  ←hint 指向→  docs["locks.motionSound.do
 4. **与 step id 同名 = 这一步的主产物**（步 `channek.script` ↔ 工件 `channek.script`）。
    注意刻意的单复数避重：步是 `channek.asset`（单数），工件是 `channek.assets`（复数）。
 
-`detect.anyOf` 是**频道识别探针**：目录里出现这几条路径之一，就认定是本卡的频道。
+条目内的落点在迁移时**一条都没变**——它们相对条目目录，条目搬到哪都一样。这正是第三套基准存在的意义。
+
+`detect.anyOf` 是布局探针：目录里出现这几条路径之一，就认定是这套布局。
+**认不认得是频道，看的是根目录有没有 `channel.json`**，探针不管这件事。
 
 ### `sections`：四个功能区，id 用内核约定名
 
 ```json
-"contentDir": "内容/3-内容工作台",
+"contentDir": "work/runs",
 "entryDirName": "{date}-{slug}",
 "sections": [
-  { "id": "intel",  "path": "内容/1-情报库" },
-  { "id": "topics", "path": "内容/2-选题库", "index": "选题库.md" },
-  { "id": "review", "path": "内容/4-运营复盘" },
-  { "id": "qc",     "path": "内容/质检记忆" }
+  { "id": "intel",  "path": "work/intel" },
+  { "id": "topics", "path": "work/inbox", "index": "选题库.md" },
+  { "id": "review", "path": "work/review" },
+  { "id": "qc",     "path": "sop/lessons", "recipe": true }
 ]
 ```
 
 **`id` 用内核认识的四个约定名**（`intel` / `topics` / `review` / `qc`），
-**`path` 用你自己的带序号中文目录名**。序号前缀让人在文件管理器里看到的就是工作顺序。
+**`path` 用你自己的目录名**。飞轮日记把三个作品区收在 `work/` 下，质检区放在 `sop/` 里。
 
 > 约定 id 写对了，AGENTS.md 的目录结构节才会渲成「情报库（选题原料）」这样的中文说明；
 > 写别的 id 会原样显示英文。
+
+**`recipe: true` 决定这个区分享时跟不跟卡走。** 缺省 = 做出来的东西（情报、选题、复盘），
+分享是拷贝做法、不拷作品，所以不进卡包、也不算卡文件；标了 `recipe` = 这个区是菜谱
+（如质检教训），随卡带走。`contentDir` 永远算作品。
+
+判据和 01 那条切分线是同一句话：**别人拿走这套做法时，这个区该不该跟着？**
+踩坑账该——它就是「这类片子会在哪翻车」的答案；选题库不该——那是你的选题，不是他的。
 
 **路径模板变量只有两个**：`{date}`（YYMMDD）与 `{slug}`。
 
@@ -257,14 +307,14 @@ config.sound（15 个机器值）  ←hint 指向→  docs["locks.motionSound.do
 |---|---|---|
 | `channek.*` | **内核 / 官方插件认得的东西** | 语义配置键 · 全部 22 条工件 id · 全部 9 条能力 · 全部 9 个步 id |
 | 裸词根 | **纯本卡自定义** | `sound` / `cover` / `quality` 组；`intel` / `topics` 等 section id；pipeline 的 key |
-| `<作者>.*` | **第三方插件与 provider** | `links.homes` / `links.voxcpm-local` / `links.remotion` |
+| `<作者>.*` | **第三方插件与 provider** | `links.homes` / `links.voxcpm-local` / `links.remotion` / 频道插件 `links.feilun-suite` |
 
 ### 字段形态实测分布
 
 | type | 出现次数 | 备注 |
 |---|---|---|
 | `number` | 28 | 承载全部阈值 |
-| `text` | 12 | 4 处带 `multiline: true` |
+| `text` | 12 | 5 处带 `multiline: true` |
 | `boolean` | 8 | 开关与冻结锁 |
 | `select` | 3 | `options: [{value, label}]`——机器存英文枚举、UI 显中文 |
 | `fileRef` | 3 | **独立类型不是 text**，app 能给文件选择器 |
@@ -309,9 +359,9 @@ config.sound（15 个机器值）  ←hint 指向→  docs["locks.motionSound.do
 ### 交叉验证：两域都命中才定罪
 
 ```json
-{ "key": "quality.deadFrameSec", "value": 2.0,
+{ "key": "quality.deadFrameSec", "value": 2,
   "hint": "像素域测量，只作佐证不单独定罪：判官是源码域的关键帧空窗（maxStillGapSec），两域都命中才算数。像素域单独绿不构成通过——它此前被一层刻意的背景噪声长期顶着" },
-{ "key": "quality.maxStillGapSec", "value": 2.0,
+{ "key": "quality.maxStillGapSec", "value": 2,
   "hint": "覆盖率只看最后一拍落在哪，看不见中间僵住…这条量的是最坏的那处空档" },
 { "key": "quality.keyframesPerSecMin", "value": 0.6,
   "hint": "空窗看最坏的一处，密度看整镜有没有被填满，两个都要" }
@@ -341,7 +391,7 @@ config.sound（15 个机器值）  ←hint 指向→  docs["locks.motionSound.do
 ### `fileRef` 的两处 hint 都写「整体替换式」
 
 ```json
-{ "key": "channek.publish.matrix", "type": "fileRef", "value": "品牌套件/平台矩阵/platforms.json",
+{ "key": "channek.publish.matrix", "type": "fileRef", "value": "brand/平台矩阵/platforms.json",
   "hint": "四平台的交付规格、硬上限与封面关联（机器配置·整体替换式）。标 null 的格是「没有尺子」，读到就如实报检不了，不许折叠成通过" }
 ```
 
@@ -364,7 +414,7 @@ config.sound（15 个机器值）  ←hint 指向→  docs["locks.motionSound.do
     "i2vSubject": "…", "i2vStyle": "…",     // ← 可照抄的生成配方
     "visualPrompt": "…",
     "clipMap": { "nod": "smile" },          // ← 动作别名降级表
-    "assetRef": "品牌套件/emo/定妆图/<定妆图>.png"
+    "assetRef": "brand/emo/定妆图/<定妆图>.png"
   },
   "codeTheme": { "comment": "…", "parameter": "…", "string": "…", "function": "…" }
 }
@@ -374,6 +424,8 @@ config.sound（15 个机器值）  ←hint 指向→  docs["locks.motionSound.do
 2. **`clipMap` 是资产级的缺件降级表**：`{"nod": "smile"}` = 「要点头？没有，拿微笑那组顶」。
 3. **`visualPrompt` / `i2vSubject` / `i2vStyle` 是可照抄的生成配方**——
    打包时 IP 实体资产被 `bundle.omit` 剔掉了，但**配方留着**，收卡人照它造自己的 IP。
+
+`brand` 整段可选：只有视频这类要「脸」的频道才写。写作频道一个字都不用写。
 
 `brandAssets.banners` 的数组是**优先级链**：
 
@@ -385,7 +437,7 @@ config.sound（15 个机器值）  ←hint 指向→  docs["locks.motionSound.do
 
 抖音先用专供尺寸，没有就回落母版。
 
-## `requires`：只有三个子段
+## `requires`：全局插件按 id 要
 
 **没有 `capabilities` / `secrets` / `endpoints` 独立子段**——密钥与端点是**刻意不进卡**的。
 
@@ -407,10 +459,11 @@ config.sound（15 个机器值）  ←hint 指向→  docs["locks.motionSound.do
       "reason": "05 配音步的末尾把逐幕旁白按镜序拼成一条完整人声轨。缺它则配音出得来、拼不成轨。" }
   ],
   "plugins": [
+    { "id": "links.homes",
+      "reason": "presentation 里的第一个功能区（也是默认落点）由它提供，缺它开频道就落在灰占位上。" },
     { "id": "links.production",
-      "reason": "九步出片流程与这九步产出的工件种类定义都由它提供。缺它则内容详情页的步骤与灯轨无法定位工件。" },
-    { "id": "links.feilun-suite", "optional": true,
-      "reason": "素材 / 运营两个功能区与灯轨富真相进度分析器都由它提供。不装也能用：两区显示占位卡、灯轨降级回通用 presence。" }
+      "reason": "九步出片流程与这九步产出的工件种类定义都由它提供。缺它则内容详情页的步骤与灯轨无法定位工件。" }
+    // …共 4 个
   ]
 }
 ```
@@ -424,12 +477,39 @@ config.sound（15 个机器值）  ←hint 指向→  docs["locks.motionSound.do
 
 `capability` 与 `plugins` 是**多对多**：一个 ffmpeg 插件提供四条能力，一个 sound-gen 插件提供两条。
 
+## `plugins`：住在频道里的插件
+
+```json
+"plugins": [ "plugins/links.feilun-suite" ]
+```
+
+`requires.plugins` 要的是**全局插件**：单独安装，任何频道都能用，按 id 引用。
+`plugins` 声明的是**频道插件**：源码就住在这个频道的文件夹里（飞轮日记用 `plugins/<插件id>/`），
+**只在这个频道加载**，别的频道看不见、启用不了，分享时跟着频道打进 `.channekcard`。
+
+飞轮日记的套件就是这么挪进来的：素材区、运营区和灯轨的富真相进度分析器，只对这一个频道有意义，
+放全局库会把「设计区」和「运行数据区」搞成一锅。挪成频道插件后，它从 `requires.plugins`
+（原先标着 `optional`）里消失，换成 `plugins` 里的一行相对路径。
+
+频道文件夹可能是别人给的，所以频道插件守几条规矩——**打开文件夹 ≠ 同意执行代码**：
+
+- **只认声明、不扫描**。路径相对、不含 `..`，按真实路径解析后必须仍在频道根内（软链指到外面直接拒）。
+- **默认不加载**。第一次打开带频道插件的频道弹信任卡，逐个列插件、信任级、权限，三选
+  「信任并加载 / 本次不加载 / 永不」。
+- **信任绑在「频道真实路径 + 代码指纹」上，不绑卡里自报的 id**——拷一份频道就能冒充 id，路径和指纹冒充不了。
+- **代码变了重新问**。作者可以对自己的频道开「开发模式」：只对这一个路径生效，代码变了自动重载、
+  顶栏提示，不再弹窗。从别处来的频道默认关。
+- **id 和任何已加载插件撞了就拒载**，并说清撞了谁——不许频道插件顶替一个你信任过的全局插件。
+
+**第二个频道也要用它时，才把它提升成全局插件**，两边改按 id 引用——「第二次用到才抽出来」。
+构建产物 `dist/` 要跟着频道入库（别人拿到就能直接加载，不必先装开发依赖），`node_modules/` 不入。
+
 ### 降级声明分三层，没有一层在 pipeline 里
 
 | 层 | 载体 | 写法 |
 |---|---|---|
 | 能力缺失 | `requires.providers[].reason` | 「**缺它则**只能用频道固定底床」 |
-| 插件缺失 | `requires.plugins[].optional` + `reason` | 「**不装也能用**：两区显示占位卡、灯轨降级回通用 presence」 |
+| 插件缺失 | `requires.plugins[].reason`（可标 `optional`） | 「**缺它**开频道就落在灰占位上」 |
 | 资产缺失 | `brand.mascot.clipMap` | `{"nod": "smile"}` = 没有点头就用微笑顶 |
 
 **但「声明降级」不等于「允许自作主张降级」**——skill 层的规矩是：
@@ -447,16 +527,30 @@ config.sound（15 个机器值）  ←hint 指向→  docs["locks.motionSound.do
 - `channek.render-master` 的 reason：「Remotion runtime 由你自行安装（**BYO**），不随卡也不随 app 分发」
 - CHANGELOG 1.0.0：「配音 / 出图走本机 **BYO 端点，凭据不随卡**」
 
+## `agent`：在频道根开 Claude / Codex 时的三个入口
+
+```json
+"agent": {
+  "guide":   "sop/README.md",       // 工作流说明：这个频道的活怎么干
+  "skills":  "sop/skills",          // skill 目录：挂到 .claude/skills/
+  "scripts": "sop/kit/scripts"      // 脚本目录：agent 和人在频道根用相对路径调
+}
+```
+
+三个入口都会写进 AGENTS.md 托管块——`guide` 和 `scripts` 进「先看这里」一节，`skills` 进
+「这个频道自带的 skill」一节（见 [03](03-agents-md.md)）。**脚本由 agent 和人跑，内核不运行它们**；
+哪个脚本需要被 app 本身调度（出现在工作台、显示进度），它就该升成插件。
+
 ## `bundle.omit`：把「拿掉」写成「教你重造」
 
 ```json
 "bundle": {
   "omit": [
-    { "path": "品牌套件/头像",
+    { "path": "brand/头像",
       "reason": "频道头像是作者的视觉身份。放你自己的：位置由 layout.cardAssets.brandAssets.avatar 声明，app 会引导你补。" },
-    { "path": "品牌套件/emo",
+    { "path": "brand/emo",
       "reason": "IP 形象保留全部权利，且动作帧序列对你也没用——你的 IP 不是这只猫。换成你自己的：brand.mascot 段里的 visualPrompt / i2vSubject / i2vStyle 就是可照抄的生成配方。" },
-    { "path": "品牌套件/片头片尾/片头-标准.mp4",
+    { "path": "brand/片头片尾/片头-标准.mp4",
       "reason": "成片带着作者的 IP 与 slogan。同目录的 scenes-片头.json 是工程文件，照它渲染成你自己的。" }
   ]
 }
@@ -467,10 +561,42 @@ config.sound（15 个机器值）  ←hint 指向→  docs["locks.motionSound.do
 三条各指向不同的补齐路径：指回 `brandAssets.avatar` 声明的位置 / 指回 `brand.mascot` 的生成配方 /
 指回同目录的工程文件。
 
+## 分享是拷贝：导出带什么、问卷问什么
+
+用别人的频道 = **拷一份**：导入 `.channekcard` 时整套拷进新文件夹、生成新的顶层 `id`。
+所以导出只带做法，**不需要你在 `bundle.omit` 里手列作品目录**：
+
+| 不进包的 | 判据从哪来 |
+|---|---|
+| 布局声明的内容容器：`contentDir` + 没标 `recipe` 的 `sections` | 从卡里读，不写死 `work/`——目录名是你起的 |
+| 点开头的本机状态：`.channek/` `.claude/` 等 | 内核固定规则 |
+| `bundle.omit` 点名的 | 你写的 |
+| 顶层 `id` / `slug` | 导出时剥掉——收卡人开出来的是另一个频道 |
+
+`bundle.omit` 因此只管**做法目录里你不想给的东西**（头像、IP、带脸的成片），不用再操心作品。
+
+### `questions`：用卡开频道时问使用者的题
+
+```json
+"questions": {
+  "profile.persona": { "label": "人设" },
+  "profile.slogan":  { "label": "口号", "optional": true },
+  "profile.bio":     { "label": "简介", "optional": true }
+}
+```
+
+**键是频道卡字段路径**，题目是 `label`，可带 `example` 和 `optional`。导出时，问卷点名的字段
+**撤下作者原值、改作那道题的示例**（题里已有 `example` 就不覆盖）；收卡人用这张卡开频道时，
+只问这几道题，不答就留空——**而不是悄悄顶着作者的人设开频道**。
+
+问卷只撤卡里的值，撤不掉做法文件里写死的。所以导出还会做一次**身份泄漏检查**：
+提示词、skill、README 里出现了频道名或人设原文，逐个列出「哪个文件里出现了哪个词」。
+**只提示、不拦**——README 里讲来历时提一句「飞轮日记」未必是错，改不改由作者判断。
+
 ## 授权分层：「方法拿走，脸留下」
 
 同一套三分法在**四处一字不改地复述**：`meta.license` · `STOREFRONT.md` 的授权节 ·
-`README.md` 的边界节 · 每条 `bundle.omit[].reason`。
+`sop/README.md` 的边界节 · 每条 `bundle.omit[].reason`。
 
 ```
 结构（流程 / 目录 / 提示词 / design token）  → CC-BY-4.0，随便改
@@ -478,30 +604,32 @@ config.sound（15 个机器值）  ←hint 指向→  docs["locks.motionSound.do
 IP 形象                                      → 保留全部权利
 ```
 
-**`bundle.omit` 是这条授权的机械执行器**——把「不得直接用」变成「打包时物理不给你」。
+**`bundle.omit` 是这条授权的机械执行器**——把「不得直接用」变成「打包时物理不给你」；
+**`questions` 是人设那一半的执行器**——把「你的人设不是我的」变成「导出时值被撤下」。
 
 ## 三份 md 的分工
 
-| | `README.md` | `STOREFRONT.md` | `CHANGELOG.md` |
+| | `sop/README.md` | `sop/STOREFRONT.md` | `sop/CHANGELOG.md` |
 |---|---|---|---|
 | **读者** | 维护者 + 干活的 AI | 潜在收卡人（**还没装**） | 已装旧版的收卡人 |
 | **视角** | 「这堆文件谁是谁」 | 「我要不要拿这张卡」 | 「我该不该更新」 |
-| **粒度** | 字段路径级 | 能力 / 价值级（**不出现字段名**） | 版本级（对齐 `cardVersion`） |
-| **与卡的关系** | 索引它 | 翻译它 | 追踪它的 `cardVersion` |
+| **粒度** | 字段路径级 | 能力 / 价值级（**不出现字段名**） | 版本级（对齐 `card.version`） |
+| **与卡的关系** | 索引它 | 翻译它 | 追踪它的 `card.version` |
 | **各自的「不」** | 「没有第四套」+ 边界三条 | 「不适合纯泛粉向的短平快内容」 | 「凭据不随卡」 |
 
 **三份都留了一句「什么不属于我」。这是这套文档范式最值得抄的一点。**
 
-`README.md` 的「文件夹地图」那张表，列设计是精髓——**第三列直接填 card.json 的字段路径**：
+`sop/README.md` 同时是 `agent.guide` 指向的工作流说明，也是 `docs.readme` 挂载的文件夹地图。
+「文件夹地图」那张表，列设计是精髓——**第三列直接填 channel.json 的字段路径**：
 
 ```
-| 文件夹 / 文件      | 装什么              | 谁指引用它                                  | 机制 |
-| `创作宪章.md`      | 频道最高法律…       | `layout.cardAssets.docs['docs.charter']`    | ①→③ |
-| `skills/`          | 随卡分发的流程说明书 | `layout.cardAssets.libraries.skills`        | ①→③ |
-| `BGM音效/`         | 进场 / 转场 / 背景乐 | `libraries.sound` · `libraries.soundIntro`  | ①  |
+| 文件夹 / 文件  | 装什么                         | 谁指引用它                                  | 机制 |
+| `channel.md`   | 频道最高法律…                  | `layout.cardAssets.docs['docs.charter']`    | ①→③ |
+| `sop/skills/`  | 随卡分发的流程说明书            | `layout.cardAssets.libraries.skills`        | ①→③ |
+| `brand/audio/` | 进场 / 转场 / 交互 / 背景乐     | `libraries.sound` · `libraries.soundIntro`  | ①  |
 ```
 
-即 **README 是「card.json 字段」与「磁盘目录」之间的双向索引**。
+即 **README 是「channel.json 字段」与「磁盘目录」之间的双向索引**。
 
 `CHANGELOG.md` 第二行那句钉死了视角：
 
@@ -517,5 +645,9 @@ IP 形象                                      → 保留全部权利
 - [ ] 每条 hint 回答的是「这条尺子防的是哪种偷懒」，不是「这个数是什么」
 - [ ] 每条 `requires.providers[].reason` 都写了「缺它则 / 换 X 也能跑，代价是 Y」
 - [ ] 每条 `bundle.omit[].reason` 都写了「你该怎么补 + 说明书在哪个字段」
+- [ ] 菜谱类的区标了 `recipe: true`；作品类的区没标、也没被手动塞进 `bundle.omit`
+- [ ] `questions` 覆盖了 `profile` 里所有「换个人就该换」的字段
+- [ ] 写给别人用的卡有 `card.id`；不必手删顶层 `id` / `slug`（导出时会剥）
+- [ ] `plugins` 里每条路径都在频道根内、不含 `..`
 - [ ] `runtime.endpoints` 里没有任何 URL / 端口 / 本机路径
 - [ ] 抽查五条 `fileRef` / `docRef` / `preview` 路径，`ls` 一下都真的存在

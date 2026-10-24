@@ -1,6 +1,6 @@
 # 04 · 方法论层：prompts / docs / skills 三件套
 
-> 一张只有 `card.json` 的卡，是把方法论留在了作者脑子里。
+> 一份只有 `channel.json` 的频道卡，是把方法论留在了作者脑子里。
 > 收卡人拿到配置、拿不到「这个频道怎么做内容」——他会照着自己的习惯做，做出来不是这个频道的东西。
 
 ## 三件套的分工（先记这一句）
@@ -9,25 +9,26 @@
 
 | | 放哪 | 读者 | 形态 | 卡里怎么登记 |
 |---|---|---|---|---|
-| **prompts** | 卡内 `prompts/` | 某一步的模型 | 作业指令（纯文本） | `prompts` 段，键→卡内相对路径 |
-| **docs** | 卡内各处 | 整个 AI 层（注入上下文） | 判据文档 | `layout.cardAssets.docs` 的 8 个挂载点 |
-| **skills** | 卡内 `skills/` | 用户自己的 coding agent | 操作手册 | `layout.cardAssets.libraries.skills` |
+| **prompts** | `sop/prompts/` | 某一步的模型 | 作业指令（纯文本） | `prompts` 段，键→频道根相对路径 |
+| **docs** | `channel.md` · `brand/` · `sop/` 各处 | 整个 AI 层（注入上下文） | 判据文档 | `layout.cardAssets.docs` 的 8 个挂载点 |
+| **skills** | `sop/skills/` | 用户自己的 coding agent | 操作手册 | `agent.skills`（旧写法 `layout.cardAssets.libraries.skills` 仍认） |
 
 **三者互相引用、绝不复制。** skill 引用 prompts，不抄一份判据进来——抄一份就是第二个真相源，
 改一处忘一处。
 
-> app 只负责把 skills 摆到频道根 `.claude/skills/`（软链回卡），**它本身不执行 skill**。
-> 读它、按它办事的是用户自己的 Agent。同名时卡里的优先。
+> app 只负责把 skills 摆到频道根 `.claude/skills/`（软链回真身），**它本身不执行 skill**。
+> 读它、按它办事的是用户自己的 Agent。同名时卡里的优先。卡带的 skill 要用户点头才挂载（见 01）。
 
 ## skills 的三层结构
 
-飞轮日记的 `风格卡/skills/` 是 **16 个目录 = `_shared` + 15 个 skill**：
+飞轮日记的 `sop/skills/` 是 **16 个目录 = `_shared` + 15 个 skill**：
 
 ```
-风格卡/skills/
+sop/skills/
 ├── _shared/                 ← 接口契约层（没有 SKILL.md，不是可触发的 skill）
 │   ├── 读卡与调能力.md        两条接口：怎么读卡、怎么调能力 + 本频道取值速查表
-│   └── 装闸契约.md            元规约：往任何 check_*.py 加判据时的验收规矩
+│   ├── 装闸契约.md            元规约：往任何 check_*.py 加判据时的验收规矩
+│   └── channel_card.py       脚本读卡的唯一入口（迁到频道卡时长出来的，见 05）
 ├── produce-flow/            ← 编排层（总编排：交接链 / 顺序约束 / 退回定位）
 │   ├── SKILL.md
 │   └── reference/退回定位.md
@@ -41,7 +42,7 @@
 
 | 层 | 解决什么 | 不这么分会怎样 |
 |---|---|---|
-| `_shared/` | 「怎么取值 / 怎么调能力 / 怎么装闸」对 15 个 skill 完全一样 | 写 15 遍，改一次要改 15 处，改漏就出现两份互相矛盾的说明书 |
+| `_shared/` | 「怎么取值 / 怎么调能力 / 怎么装闸」对 15 个 skill 完全一样 | 写 15 遍，改一次要改 15 处，改漏就出现两份互相矛盾的说明书。迁到频道卡时这一层又证明了一次：卡的形状变了，脚本只改了「从 `_shared` 读」这一处 |
 | 单步 skill | 「这一步怎么做对」 | 方法论无处安放，每次对话现讲一遍 |
 | `produce-flow` | 交接物清单 / 顺序约束 / 闸挂哪个交接口——**这三类知识不属于任何单步** | 写进单步就会变成两份，下游那份永远滞后 |
 
@@ -309,4 +310,4 @@ python check_storyboard.py /tmp/bad.json … | grep 图标名     # 必须出现
 - [ ] 每份 skill 的 frontmatter 都有 `边界：` 一句（不做什么、去找谁）
 - [ ] 每份 skill 都能**被单独触发使用**（用户只说「配个音」，那一份自己就完整可用）
 - [ ] `produce-flow` 里没有抄任何一个闸的参数
-- [ ] 卡的 `layout.cardAssets.libraries.skills` 指向了这个目录（否则 AGENTS.md 里没有它）
+- [ ] 频道卡的 `agent.skills` 指向了这个目录（否则 AGENTS.md 里没有它，`.claude/skills/` 也挂不上）

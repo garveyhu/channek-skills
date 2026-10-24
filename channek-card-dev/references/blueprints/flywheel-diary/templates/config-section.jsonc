@@ -1,4 +1,4 @@
-// card.json 的 `config` 段模板 —— 「卡自声明的可编辑配置」。
+// 频道卡 channel.json 的 `config` 段模板 —— 「卡自声明的可编辑配置」。
 //
 // 它是什么：你在 app 的卡设置页看到的每一个控件，都是这里的一条 field 声明出来的。
 // 它同时是**喂给 AI 的频道参数表**（渲进 AGENTS.md 的「频道配置」节）。
@@ -45,7 +45,7 @@
             "key": "channek.visual.negativePrompt",
             "name": "负向提示词",
             "type": "text",
-            "valueFrom": "prompts/负向提示词.txt"    // 卡根内相对路径
+            "valueFrom": "sop/prompts/负向提示词.txt"    // 频道根内相对路径（频道卡的卡根就是频道根）
           },
 
           // ② number：带单位与范围的数值
@@ -92,16 +92,16 @@
             "value": "#FFD12E"
           },
 
-          // ⑥ fileRef：指向卡内的一个文件（结构体配置就走这条路）
+          // ⑥ fileRef：指向频道里的一个文件（结构体配置就走这条路；路径相对频道根）
           {
             "key": "cover.config",
             "name": "封面套件",
             "type": "fileRef",
-            "value": "品牌套件/封面/cover.json",
+            "value": "brand/封面/cover.json",
             "accept": [".json"]
           },
 
-          // ⑦ directory：本机目录。**值永不入卡**（落工作区侧车）。
+          // ⑦ directory：本机目录。**值永不入卡**（落本机的 `.channek/`，那里是这台机器对这个频道的状态）。
           //    写了 value 会被 schema 直接拒——这是可移植性红线，不是风格建议。
           {
             "key": "local.exportDir",

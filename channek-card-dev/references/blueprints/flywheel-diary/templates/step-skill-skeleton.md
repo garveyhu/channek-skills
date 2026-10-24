@@ -8,8 +8,8 @@ description: >-
 ---
 
 <!--
-这是「单步 skill」的填空模板，抽自一个跑通过 27 条内容的频道。
-用法：整份复制到 风格卡/skills/<skill-id>/SKILL.md，把 <> 换掉，删掉不需要的节。
+这是「单步 skill」的填空模板，抽自一个跑通过 29 条内容的频道。
+用法：整份复制到 sop/skills/<skill-id>/SKILL.md（或你频道卡 agent.skills 指向的目录），把 <> 换掉，删掉不需要的节。
 
 四条元规矩，先记住再动手：
   1. 章节按需出现，**不为对齐骨架而硬凑**——纯创意步没有「调能力」节，无闸步没有 check 脚本节。
@@ -74,7 +74,8 @@ description: >-
 ### 3.3 <定完必须跑的体检>
 
 ```bash
-python 风格卡/skills/<skill-id>/scripts/check_<x>.py <产物> \
+# 从频道根调用，只用相对路径
+python sop/skills/<skill-id>/scripts/check_<x>.py <产物> \
     --<阈值名> "$(channek card <卡里的键>)"          # 尺子由读卡内联传入，脚本不带默认值
 ```
 

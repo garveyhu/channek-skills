@@ -51,7 +51,6 @@
 | V3 | version / minAppVersion 是合法 semver |
 | V5 | T0（declarative）禁 entries / permissions 等代码面字段 |
 | V6 | 代码插件要 apiVersion；T1 要 sandbox 入口；T2 要 apiVersion |
-| V7 | workspace scope 的插件必须是 declarative |
 | V9 | permissions 数组合法、无未知权限、net 权限形状对 |
 | V11 | contributes 是对象、每键的贡献是数组 |
 | V12 | 自定义扩展点：id 须 `<pluginId>.` 命名空间、declSchema 是数组 |

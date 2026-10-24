@@ -1,0 +1,157 @@
+// 可抄的完整示例频道卡：口播快剪频道（6 步流水线 · 无分镜 / 无素材生成 / 无封面）
+// 抄的时候：改 name 与 card.id，删掉用不上的段——必填只有前 3 个字段（schema / formatVersion / name），
+// 写给别人用的卡再加 card.id；但**某段一旦写了，段内必填就要写全**（清单见 references/generated/card-schema.md）。
+// 顶层 id / slug（频道在这台机器上的身份）不用写：app 首次打开时生成并写回。
+// 写完跑 `channek check <频道目录>`，它用的是 app 读卡时同一份判据。
+// 频道目录形态（目录名你自己定，这里是推荐的「菜谱 / 菜」两半）：
+//   acme.talkfast/
+//   ├── channel.json            ← 本文件（频道卡，只能叫这个名、只能放频道根）
+//   ├── sop/                    ← 怎么做（菜谱）：随卡分享
+//   │   ├── README.md           ← 工作流说明（agent.guide）
+//   │   ├── skills/             ← 给 agent 的操作手册（agent.skills，会挂到 .claude/skills/）
+//   │   ├── kit/prompts/        ← prompts 段引用的提示词资产
+//   │   ├── kit/scripts/        ← 频道自带的脚本（agent.scripts）
+//   │   └── lessons/            ← 质检教训（标了 recipe 的区，随卡走）
+//   ├── brand/icon.png          ← meta.icon 引用
+//   ├── STOREFRONT.md           ← 上架长文（要上架才需要）
+//   └── work/                   ← 做出来的东西（菜）：分享时不带
+//       ├── inbox/              ← 选题
+//       ├── runs/<日期-slug>/   ← 每一期
+//       └── review/             ← 复盘
+{
+  "schema": "channek.channel",
+  "formatVersion": 1,
+  "name": "口播快剪",
+  // 卡自己的身份：<发布者>.<名字>。血缘、市场、「从原卡更新」都认它
+  "card": { "id": "acme.talkfast", "version": "1.0.0" },
+
+  // 这个频道是谁、做什么。被 questions 点名的字段，分享时作者的值会撤下改作示例
+  "profile": {
+    "niche": "口播观点频道：单人出镜 / 快节奏剪辑 / 周更",
+    "audience": "对效率工具感兴趣的中文观众",
+    "persona": "讲清楚一个效率工具只要三分钟的博主"
+  },
+  // 写了 format 就三个全写，都是枚举：
+  // orientation: landscape / portrait / square · persona: none / avatar / real · captions: sentence / word / none
+  "format": { "orientation": "portrait", "persona": "real", "captions": "sentence" },
+
+  "brand": {
+    "tokens": {
+      // 写了 brand.tokens 就六项全写：colors / accent / fonts / stroke / radius / grid
+      "colors": { "ink": "#1a1a1a", "paper": "#faf7f2", "accent-warm": "#c96f4a" },
+      "accent": "accent-warm",
+      "fonts": { "display": ["Source Han Sans"], "body": ["Source Han Sans"], "mono": ["JetBrains Mono"] },
+      "stroke": 2,
+      "radius": 12,
+      "grid": 8
+    }
+  },
+
+  "voice": {
+    "default": "host",
+    "profiles": {
+      "host": { "label": "主播音色", "engine": "acme.voxcpm-local" }
+    }
+  },
+
+  // 写了 captions 就四项全写；stroke 是枚举 none / soft / hard / pill
+  "captions": { "highlight": true, "maxLines": 2, "wordsPerLine": 14, "stroke": "soft" },
+
+  "pipeline": {
+    "steps": [
+      { "key": "topic",   "step": "acme.topic" },
+      { "key": "script",  "step": "acme.script",
+        "config": { "systemPromptRef": "sop/kit/prompts/script.md" } },
+      { "key": "voice",   "step": "acme.voice" },
+      { "key": "caption", "step": "acme.caption" },
+      { "key": "edit",    "step": "channek.edit" },
+      { "key": "publish", "step": "acme.publish",
+        "config": { "platforms": ["bilibili", "douyin"] } }
+    ]
+  },
+
+  "layout": {
+    // 内容放哪全由你定。contentDir 与 sections 是「做出来的东西」，分享时不带——
+    // 标了 recipe 的区除外（它是菜谱，比如质检教训）
+    "contentDir": "work/runs",
+    "entryDirName": "{date}-{slug}",
+    "sections": [
+      { "id": "topics", "path": "work/inbox" },
+      { "id": "review", "path": "work/review" },
+      { "id": "qc", "path": "sop/lessons", "recipe": true }
+    ],
+    "artifacts": {
+      "acme.script":      "script.md",
+      "acme.voiceTrack":  "voice/track.wav",
+      "acme.captionCues": "captions/cues.json",
+      "acme.master":      "master/final.mp4",
+      "acme.delivery":    "deliver/"
+    },
+    "detect": { "anyOf": ["work/runs"] }
+  },
+
+  "editor": {
+    "trackTemplate": [
+      { "kind": "video",   "name": "V1" },
+      { "kind": "caption", "name": "字幕" },
+      { "kind": "audio",   "name": "旁白" },
+      { "kind": "audio",   "name": "音乐" }
+    ]
+  },
+
+  "prompts": { "script": "sop/kit/prompts/script.md" },
+
+  "presentation": {
+    "sections": [{ "id": "homes" }, { "id": "content" }],
+    "defaultSection": "homes"
+  },
+
+  "requires": {
+    "app": ">=0.9.0",
+    "providers": [
+      { "capability": "channek.tts",
+        "prefer": ["acme.voxcpm-local"],
+        "plugins": ["acme.voice-lab"],
+        "reason": "频道音色按这家调过" },
+      { "capability": "channek.asr", "prefer": ["acme.whisper-local"] }
+    ],
+    // 全局插件：按 id 要，收卡人单独安装
+    "plugins": [{ "id": "acme.talkfast-steps" }]
+  },
+  // 频道插件：住在本频道里的插件目录（相对频道根），随卡分享；收卡人打开频道时先过信任卡
+  // "plugins": ["plugins/acme.talkfast-suite"],
+
+  "runtime": {
+    "endpoints": [
+      { "id": "tts-endpoint", "capability": "channek.tts" }
+      // 注意：只有 id + capability。URL / 模型路径写在这里会被校验直接拒——
+      // 端点真值属于收卡人自己的插件设置。
+    ]
+  },
+
+  // 在频道根开 Claude / Codex 时的入口：写进 AGENTS.md 托管块，skill 挂到 .claude/skills/
+  "agent": {
+    "guide": "sop/README.md",
+    "skills": "sop/skills",
+    "scripts": "sop/kit/scripts"
+  },
+
+  // 别人用这张卡开频道时问的题（键是本文件里的字段路径）。都可以不填
+  "questions": {
+    "profile.persona": { "label": "人设" }
+  },
+
+  "meta": {
+    "author": "acme",
+    "license": "CC-BY-4.0",
+    "description": "口播快剪频道模板：6 步流水线 + 暖纸视觉",
+    "icon": "brand/icon.png"
+  },
+
+  "bundle": {
+    "omit": [
+      { "path": "brand/ip-actions",
+        "reason": "IP 动作帧序列是作者形象专属，请用自己的 IP 生成一套" }
+    ]
+  }
+}

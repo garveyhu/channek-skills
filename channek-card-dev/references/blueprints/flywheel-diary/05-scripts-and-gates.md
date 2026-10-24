@@ -9,17 +9,20 @@
 | **质检闸 `check_*.py`** | **9** | 绝对主体 |
 | 扫描层 / 内部库 | 1 | 被某个闸 import，自带 CLI 用来打回归基准 |
 | 复盘 / 账本 | 2 | 在九步之外 |
-| 脚手架 `.sh` | 1 | 开题建目录 |
-| **读卡助手** | **0** | ← 见下 |
+| 脚手架 `.sh` | 1 | 开题建目录（`sop/kit/scripts/new-entry.sh`） |
+| 读卡助手 | 1 | `sop/skills/_shared/channel_card.py`，52 行 ← 见下 |
 | **渲染 / 混音 / 出图 / 发布脚本** | **0** | ← 见下 |
 
-**两个「0」比那 9 个闸更能说明这套范式。**
+**那个「0」比那 9 个闸更能说明这套范式。**
 
 - **没有渲染 / 发布脚本**，因为「做一件具体的事」一律是插件能力，经 `channek invoke` 调。
   频道里**一行 ffmpeg 都没有**（除了两个「量」音视频的闸）——这是设计，不是缺失。
-- **没有读卡助手**，因为读卡只有两条路（下文），两条都不需要辅助层。
+- **读卡助手原本也是 0**，是迁到频道卡时才长出来的一个：频道卡把旧卡的 `identity` 拆成了
+  `profile` + `format`、卡自己的身份收进了 `card` 段，而闸们是照旧卡形状写的。助手把新卡换算回
+  旧形状，**脚本只改「从哪读」，不改「读什么」**。它只读 `channel.json`、不扫任何目录，
+  所以不是「第四套」；它是一层迁移垫片，住在 `_shared/` 里，四个直读卡的脚本共用它（组件闸还留着自己那份自定位，见路 C）。
 
-**规模分布也有信息**：最大的闸 2625 行，最小的 84 行。**篇幅 ≈ 那一维判据有多难判对**，
+**规模分布也有信息**：最大的闸 2628 行，最小的 84 行。**篇幅 ≈ 那一维判据有多难判对**，
 不是 ≈ 那一步有多重要。
 
 ## 脚本怎么读卡：四条路，按优先级
@@ -71,15 +74,22 @@ def load_thresholds(source):
 **「卡里的键名原样当阈值名」是一条关键约定**——它让报告可反查：报告里出现 `sceneMaxSec`，
 读的人直接 `channek card quality.sceneMaxSec` 就能查到那把尺子。
 
-### 路 C · 脚本按相对位置自定位 `card.json` 直读
+### 路 C · 脚本按相对位置自定位频道卡直读
 
 只在「值太多 / 要判来源 / 要做兜底」时用。**靠自己的文件位置反推，不靠 cwd、不靠环境变量**：
 
 ```python
-def card_path() -> str:
-    """脚本住在 <卡>/skills/<skill>/scripts/ —— 卡在往上第三层。"""
+def channel_root() -> str:
+    """脚本住在 <频道根>/sop/skills/<skill>/scripts/ —— 由自己的位置反推频道根。"""
     here = os.path.dirname(os.path.abspath(__file__))
-    return os.path.abspath(os.path.join(here, *([os.pardir] * 3), "card.json"))
+    return os.path.abspath(os.path.join(here, *([os.pardir] * 4)))
+
+def card_path() -> str:
+    """频道卡在频道根。还没迁的旧频道才是 <卡>/card.json。"""
+    channel = os.path.join(channel_root(), "channel.json")
+    if os.path.isfile(channel):
+        return channel
+    …
 
 def card_number(key: str):
     """卡里那个数值键的原值；卡不在（夹具 / 别处跑）就返 None，别自己编一个。
@@ -91,6 +101,17 @@ def card_number(key: str):
 def _fallback(given, key, default):
     """命令行 > 卡 > 脚本默认。三层里只有第一层是调用方的意思，后两层是兜底。"""
 ```
+
+要读的不只是 `config` 里的数，还有 `layout` 这种结构时，统一走 `_shared` 那个助手，别每个闸各解析一遍：
+
+```python
+ROOT = Path(__file__).resolve().parents[4]          # sop/skills/<skill>/scripts/x.py → 频道根
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "_shared"))
+from channel_card import load_card                    # 读卡统一走频道卡
+WORKBENCH = ROOT / load_card()["layout"]["contentDir"]
+```
+
+助手对旧卡（`card.json`）原样返回——还没迁的频道照旧能用，同一套闸两种卡都跑得通。
 
 走这条路时，**脚本默认值的来源必须写进注释**，不许拍脑袋：
 
@@ -292,19 +313,23 @@ def soften_new_gates(findings, made, since):
 | 人工清单 | 模块级常量 `HUMAN_CHECKS` | 四个大闸统一用这个名字 |
 
 ```
-风格卡/scripts/<脚手架>.sh                      卡级、跨步的工具
-风格卡/skills/<skill>/scripts/check_<x>.py      某一步的闸，跟着那个 skill 走
-风格卡/skills/<skill>/scripts/<lib>.py          只给这个 skill 用的扫描层
-风格卡/skills/<skill>/scripts/fixtures/<场景>/  反向验证夹具
-风格卡/skills/<skill>/<baseline>.json           历史欠账豁免名单
+sop/kit/scripts/<脚手架>.sh                  跨步的工具（agent.scripts 指向这里）
+sop/skills/_shared/channel_card.py           读卡助手，所有闸共用
+sop/skills/<skill>/scripts/check_<x>.py      某一步的闸，跟着那个 skill 走
+sop/skills/<skill>/scripts/<lib>.py          只给这个 skill 用的扫描层
+sop/skills/<skill>/scripts/fixtures/<场景>/  反向验证夹具
+sop/skills/<skill>/<baseline>.json           历史欠账豁免名单
 ```
+
+**两类脚本两个家**：跨步、给人和 agent 直接跑的工具进 `sop/kit/scripts/`（托管块「先看这里」会指过去，
+所以文件头要写清用途）；只服务某一步的闸跟着 skill 走。一律从频道根用相对路径调用。
 
 **铁律：脚本永远住在它所服务的那个 skill 里。** 一个闸被别的 skill 当判官用时，
 那边**跨 skill 引用它的路径，不复制一份**。
 
 ## 可移植性：七条落实手段
 
-顶层原则（卡的 README）：
+顶层原则（`sop/README.md`）：
 
 > **没有第四套。** 出现「某个脚本按固定名去扫某个目录」这种硬约定，
 > 就是在卡之外又建了一份真相源——换一张目录结构不同的卡时它会**静默失灵**。
@@ -318,15 +343,17 @@ def soften_new_gates(findings, made, since):
    ```
    而且**不引 jq**（「agent 的终端里有没有它不好说」），扁平 JSON 用 `sed` 取值即可；
    还做了路径逃逸防护：`case "$pattern" in /* | *..*) continue ;; esac`
-4. **零第三方为默认**：11 个 Python 里 8 个纯标准库。
+4. **零第三方为默认**：13 个 Python（含读卡助手）里 11 个纯标准库。
 5. **外部二进制只有 ffmpeg/ffprobe**，且只出现在两个「必须量真音频 / 真视频」的闸里——
    **不为了干活调 ffmpeg**（干活走 `channek invoke`），**只为了量**。
 6. **同目录 import 保证任何 cwd 都能跑**：`sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))`
 7. **文件读写显式 `encoding="utf-8"`**（中文路径 + 中文内容的必要习惯）；CSV 用 `utf-8-sig`。
 
-> **诚实记录**：这个频道自己也有几个脚本违反了上面第 1、2 条——硬编码了中文目录名
-> （`内容/3-内容工作台`、`配音/音乐音效/palette.json`）。同类需求的合规写法是从卡的
-> `layout.sections` / `layout.contentDir` 读。**照抄这套范式时抄合规的那几个，别抄这几个。**
+> **诚实记录**：这个频道自己还有两个脚本违反了上面第 1 条——写死了文件名：
+> 音线闸按 `配音/音乐音效/palette.json` 去找调色板（没走 `layout.artifacts` 的 `channek.sfx`），
+> 复盘数据脚本写死了某一份选题批次的文件名。迁到频道卡时，原先硬编码 `内容/3-内容工作台` 的那几个
+> 已经改成从 `layout.contentDir` / `layout.sections` 读——**这正是它们第一次被真的「换了目录结构」**，
+> 写死的当场就得改，读卡的一行不用动。**照抄这套范式时抄合规的那几个，别抄这两个。**
 
 ## 注释纪律：每道闸的 docstring 要回答「为什么这道闸在这里」
 

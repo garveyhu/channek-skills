@@ -58,6 +58,11 @@ T2 是生态灾难。
 3. **声明式能力**(T2 但无代码):把本机脚本或云 API 用 `invoke: { kind: "command" | "http" }`
    模板接成一条能力(如「调我自己的出图脚本」),见 `references/capability-provider.md`。
 
+**先定放哪:全局插件还是频道插件?** 只有一个频道用得上的(某个频道专属的功能区、分析器)做成**频道插件**:
+放进那个频道的 `plugins/<id>/`,在频道卡 `channel.json` 的 `plugins` 里写上相对路径——它随频道分享,
+别的频道看不见。好几个频道都要用的(出图、配音、发布平台)做成**全局插件**,频道卡用 `requires.plugins` 按 id 要。
+三级信任对两者都开放;频道插件多一道「频道被信任才加载」的门,见 `references/trust-tiers.md`。
+
 一个提醒:app 已经加载过的数据(内容条目、卡声明、素材索引、管线状态…),T1 经 suite 桥
 都拿得到——别因为「要读数据」就误上 T2。桥能给什么查 `references/sandbox-bridge.md`;
 三级的完整边界见 `references/trust-tiers.md`。
@@ -98,10 +103,14 @@ T2 是生态灾难。
 ### 5. 本地调试
 
 ```bash
-ln -s <你的开发目录> ~/.channek/plugins/<manifest.id>   # 软链是受支持的一等开发流
+ln -s <你的开发目录> ~/.channek/plugins/<manifest.id>   # 全局插件:软链是受支持的一等开发流
 ```
 
-然后:设置 → 第三方插件 → 重新扫描 → 启用。**改完之后 app 用不用得上新代码,分三种情况**:
+然后:设置 → 第三方插件 → 重新扫描 → 启用。
+
+**频道插件**直接在频道里开发:插件放 `plugins/<id>/`、`channel.json` 的 `plugins` 里写上路径,打开频道,
+在信任卡上勾「这是我自己的频道,打开开发模式」再点「信任并加载」——开发模式下改代码不会被当成篡改而自动停用。
+**只给自己的频道开**。**改完之后 app 用不用得上新代码,分三种情况**:
 
 | 改了什么 | 怎么让它生效 |
 |---|---|
@@ -119,7 +128,8 @@ ln -s <你的开发目录> ~/.channek/plugins/<manifest.id>   # 软链是受支�
 |---|---|
 | 列表里没有 | 目录名 = manifest.id?manifest 是合法 JSON? |
 | 红标 error | 点开看逐条校验错误(id 不合法 / T0 带了 entries / …) |
-| 灰 incompatible | `minAppVersion` 过高,或在工作区 scope 里声明了 T1/T2(那里只许 T0) |
+| 灰 incompatible | `minAppVersion` 过高 |
+| 频道插件没出现 | 频道还没被信任(看频道里的信任提示条);或 id 被别处占用 / 路径不对(频道里有提示条说原因) |
 | 页面停在初始文本 | **脚本内联在 html 里了**——安全策略不放行内联脚本,HTML 照常渲染但脚本不跑,改成外部 js 文件 |
 | 行为不对 | 插件详情页「日志」(最近 200 条)+ 权限拒绝计数 |
 
@@ -128,8 +138,10 @@ ln -s <你的开发目录> ~/.channek/plugins/<manifest.id>   # 软链是受支�
 - 用 **`channek plugin pack <插件目录>`** 打包,**绝不手工 zip**——pack 会按与安装侧同一份
   黑名单剥掉 `.git*` / `node_modules` / 疑似密钥;手工 zip 哪怕夹带一个 `.gitignore`,
   都会在用户机器上被安装侧整包拒收,而你收不到任何报错。
-- 两条分发路:**独立分发**(用户导入 / 商店,通用能力走这条)与**随卡捎带**
-  (`.channekcard` 包的 `plugins/` 里,复刻频道走这条;包内 T1/T2 必须有有效签名)。
+- 三条分发路:**独立分发**(用户导入 / 商店,通用能力走这条)、**随卡捎带**
+  (卡包按 `requires` 捎带的全局插件,在包的 `plugins/` 里;包内 T1/T2 必须有有效签名),
+  以及**频道插件**(只给一个频道用:放进频道的 `plugins/<id>/`、在 `channel.json` 的 `plugins` 里声明,
+  它就是频道的文件,分享频道时自然带走;收卡人打开频道时过信任卡。详见 `references/trust-tiers.md`)。
 - 上架硬规则与流程见 `references/packaging-and-publish.md`。
 
 ## 自检清单(提交前逐条过)

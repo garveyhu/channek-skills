@@ -11,7 +11,6 @@
 | `V3` | `invalid version: …`<br>`invalid minAppVersion: …` |
 | `V5` | `… is forbidden for declarative plugins` |
 | `V6` | `code plugins require apiVersion 1`<br>`sandboxed plugins require a sandbox entry`<br>`privileged plugins require apiVersion` |
-| `V7` | `workspace plugins must be declarative` |
 | `V9` | `permissions must be an array`<br>`unknown permission: …`<br>`invalid network permission` |
 | `V11` | `contributes must be an object`<br>`… contributions must be an array` |
 | `V12` | `extensionPoints must be an array`<br>`custom extension point must use the …. namespace`<br>`declSchema for … must be an array` |

@@ -16,7 +16,7 @@
 ---
 
 > ### 文档写给人，这一册写给 AI
-> 开发一张 [Channek](https://github.com/garveyhu/Channek) 风格卡或一个插件，人读的是概念与来龙去脉；
+> 开发一个 [Channek](https://github.com/garveyhu/Channek) 频道或一个插件，人读的是概念与来龙去脉；
 > coding agent 要的是另一种东西：可执行的工作流、逐字段的契约表、值得逐字照抄的模板。
 > 这个仓库就是那份东西——装上它，你的 agent 在落笔之前就已经懂规矩。
 
@@ -26,7 +26,7 @@
 
 | skill | 干什么 | 什么时候醒 |
 |---|---|---|
-| [`channek-card-dev`](channek-card-dev/SKILL.md) | 写或改一张**风格卡**：`card.json` 逐层过、可移植红线自检、打包 `.channekcard` | 「写一张风格卡」·「做个频道模板」·「把我的频道打包分发」 |
+| [`channek-card-dev`](channek-card-dev/SKILL.md) | 做或改一个**频道**：根目录频道卡 `channel.json` 逐层过、可移植红线自检、分享成 `.channekcard`（拷贝做法、不拷作品） | 「做一个频道」·「把我的流程变成频道」·「把我的频道分享出去」 |
 | [`channek-plugin-dev`](channek-plugin-dev/SKILL.md) | 造一个**插件**：选信任级 → manifest → 实现（T1 沙箱 / T2 特权）→ 调试 → 打包发布 | 「写一个 Channek 插件」·「加个主题 / 功能区 / 能力」·「这个功能该插在哪」 |
 
 每个 skill 同一副骨架。`SKILL.md` 是 agent 照着执行的工作流——步骤、取舍、自检清单；

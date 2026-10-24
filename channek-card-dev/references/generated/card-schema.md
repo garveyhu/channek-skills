@@ -1,33 +1,36 @@
 <!-- 同步自 Channek 仓库 docs/plugin/reference/card-schema.md（由源码生成）。勿手改：跑 scripts/sync-contracts.mjs -->
 <!-- 此文件由 pnpm gen:card-ref 生成，请勿手改。 -->
-# 卡字段表（card.json）
+# 频道卡字段表（channel.json）
 
-由 `@channek/style-card` 的 `styleCardSchema` 直接生成，**和 app 读卡时用的是同一份判据**。
-写完卡用 `channek check <频道或卡目录>` 验一遍：它报的字段路径就是这张表里的路径。
+由 `@channek/style-card` 的频道卡外壳 schema 与 `styleCardSchema` 直接生成，**和 app 读卡时用的是同一份判据**。
+写完卡用 `channek check <频道目录>` 验一遍：它报的字段路径就是这张表里的路径。
 
-## 缺一个就读不通的字段（共 5 个）
+身份两件事分开：顶层 `id` / `slug` 是**这个频道在这台机器上**的身份，app 首次打开时生成并写回，
+分发的卡里不写；`card.id` 是**卡自己**的身份（`<发布者>.<名字>`），血缘、市场、「从原卡更新」都认它——
+两者至少要有一个，写给别人用的卡写 `card.id`。
+
+## 缺一个就读不通的字段（共 3 个）
 
 「必填」只在父级存在时才生效；这里列的是**整条链都必填**的——一张最小的卡恰好只要这些。
 
 | 字段路径 | | 类型 / 取值 |
 |---|---|---|
-| `schema` | 必填 | `"channek.stylecard"` |
-| `formatVersion` | 必填 | `2` |
-| `id` | 必填 | string |
+| `schema` | 必填 | `"channek.channel"` |
+| `formatVersion` | 必填 | `1` |
 | `name` | 必填 | string |
-| `slug` | 必填 | string |
 
-## 写了某一段，就必须写全的字段（共 90 个）
+## 写了某一段，就必须写全的字段（共 91 个）
 
-这是手写卡最常踩的坑：段本身可选，写了一半就读不通。例如写了 `identity.format`，
+这是手写卡最常踩的坑：段本身可选，写了一半就读不通。例如写了 `format`，
 它下面的三个枚举就都得有；写了 `brand.tokens`，它下面六项就都得有。
 
 | 字段路径 | | 类型 / 取值 |
 |---|---|---|
-| `identity.format` | 必填 | object |
-| `identity.format.orientation` | 必填 | `landscape` / `portrait` / `square` |
-| `identity.format.persona` | 必填 | `none` / `avatar` / `real` |
-| `identity.format.captions` | 必填 | `sentence` / `word` / `none` |
+| `questions.<键>` | 必填 | object |
+| `questions.<键>.label` | 必填 | string |
+| `format.orientation` | 必填 | `landscape` / `portrait` / `square` |
+| `format.persona` | 必填 | `none` / `avatar` / `real` |
+| `format.captions` | 必填 | `sentence` / `word` / `none` |
 | `brand.tokens` | 必填 | object |
 | `brand.tokens.colors` | 必填 | { [键]: string } |
 | `brand.tokens.accent` | 必填 | string |
@@ -115,35 +118,48 @@
 | `runtime.endpoints[].setup.options[]` | 必填 | object |
 | `runtime.endpoints[].setup.options[].label` | 必填 | string |
 
-## 全部字段（共 299 个）
+## 全部字段（共 313 个）
 
 `[]` = 数组里的每一项，`<键>` = 由你起名的键。某个段写了，它下面标「必填」的就都得写。
 
 | 字段路径 | | 类型 / 取值 |
 |---|---|---|
-| `schema` | 必填 | `"channek.stylecard"` |
-| `formatVersion` | 必填 | `2` |
-| `id` | 必填 | string |
+| `schema` | 必填 | `"channek.channel"` |
+| `formatVersion` | 必填 | `1` |
+| `id` | 可选 | string |
+| `slug` | 可选 | string |
 | `name` | 必填 | string |
-| `slug` | 必填 | string |
-| `face` | 可选 | string |
-| `cardVersion` | 可选 | string |
-| `createdAt` | 可选 | string |
-| `modifiedAt` | 可选 | string |
-| `identity` | 可选 | object |
-| `identity.niche` | 可选 | string |
-| `identity.audience` | 可选 | string |
-| `identity.persona` | 可选 | string |
-| `identity.slogan` | 可选 | string |
-| `identity.pillars` | 可选 | string |
-| `identity.bio` | 可选 | string |
-| `identity.mindWord` | 可选 | string |
-| `identity.strategy` | 可选 | string |
-| `identity.format` | 必填 | object |
-| `identity.format.orientation` | 必填 | `landscape` / `portrait` / `square` |
-| `identity.format.also` | 可选 | `landscape` / `portrait` / `square`[] |
-| `identity.format.persona` | 必填 | `none` / `avatar` / `real` |
-| `identity.format.captions` | 必填 | `sentence` / `word` / `none` |
+| `card` | 可选 | object |
+| `card.id` | 可选 | string |
+| `card.slug` | 可选 | string |
+| `card.version` | 可选 | string |
+| `card.face` | 可选 | string |
+| `card.createdAt` | 可选 | string |
+| `card.modifiedAt` | 可选 | string |
+| `profile` | 可选 | { [键]: 任意 } |
+| `format` | 可选 | { [键]: 任意 } |
+| `plugins` | 可选 | string[] |
+| `agent` | 可选 | object |
+| `agent.guide` | 可选 | string |
+| `agent.skills` | 可选 | string |
+| `agent.scripts` | 可选 | string |
+| `questions` | 可选 | { [键]: object } |
+| `questions.<键>` | 必填 | object |
+| `questions.<键>.label` | 必填 | string |
+| `questions.<键>.example` | 可选 | string |
+| `questions.<键>.optional` | 可选 | boolean |
+| `profile.niche` | 可选 | string |
+| `profile.audience` | 可选 | string |
+| `profile.persona` | 可选 | string |
+| `profile.slogan` | 可选 | string |
+| `profile.pillars` | 可选 | string |
+| `profile.bio` | 可选 | string |
+| `profile.mindWord` | 可选 | string |
+| `profile.strategy` | 可选 | string |
+| `format.orientation` | 必填 | `landscape` / `portrait` / `square` |
+| `format.also` | 可选 | `landscape` / `portrait` / `square`[] |
+| `format.persona` | 必填 | `none` / `avatar` / `real` |
+| `format.captions` | 必填 | `sentence` / `word` / `none` |
 | `brand` | 可选 | object |
 | `brand.tokens` | 必填 | object |
 | `brand.tokens.colors` | 必填 | { [键]: string } |
@@ -328,6 +344,7 @@
 | `layout.sections[].id` | 必填 | string |
 | `layout.sections[].path` | 必填 | string |
 | `layout.sections[].index` | 可选 | string |
+| `layout.sections[].recipe` | 可选 | boolean |
 | `layout.artifacts` | 可选 | { [键]: string } |
 | `layout.artifactAlsoRead` | 可选 | { [键]: string[] } |
 | `layout.detect` | 可选 | object |

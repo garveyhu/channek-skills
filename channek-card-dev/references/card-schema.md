@@ -1,25 +1,31 @@
-# card.json 字段表
+# 频道卡（channel.json）字段讲解
 
 校验器：卡 schema 的 zod 单一真相源在 app 内（`@channek/style-card`）。**字段、必填、枚举的真值以
-`generated/card-schema.md` 为准**（由那份 schema 生成）；本文按层讲每一段的意义与设计理由；
-标 **（严）** 的规则违反即校验失败。所有卡内路径均为**卡根内相对路径**，`..` 与绝对路径被拒（严）。
+`generated/card-schema.md` 为准**（由那份 schema 生成，按 `channel.json` 的写法列）；本文按层讲每一段的
+意义与设计理由；标 **（严）** 的规则违反即校验失败。所有卡内路径均为**频道根内相对路径**（频道卡的卡根
+就是频道根），`..` 与绝对路径被拒（严）。
 
-## 顶层
+## 外壳（我是谁）
 
 | 字段 | 必填 | 说明 |
 |---|---|---|
-| `schema` | ✅ | 恒为 `"channek.stylecard"` |
-| `formatVersion` | ✅ | 恒为 `2` |
-| `id` | ✅ | `<publisher>.<name>` 点分小写；`channek.*` 保留官方 |
+| `schema` | ✅ | 恒为 `"channek.channel"` |
+| `formatVersion` | ✅ | 恒为 `1` |
 | `name` | ✅ | 显示名 |
-| `slug` | ✅ | 频道 slug（目录 / 工件模板里 `{slug}` 的值来源） |
-| `face` / `cardVersion` / `createdAt` / `modifiedAt` | — | 元信息；时间为带时区的 ISO 8601 |
+| `card.id` | 分享的卡必填 | **卡自己**的身份：`<publisher>.<name>` 点分小写；`channek.*` 保留官方。血缘、市场、「从原卡更新」认它 |
+| `card.slug` / `card.version` / `card.face` / `card.createdAt` / `card.modifiedAt` | — | 卡自身的元信息；时间为带时区的 ISO 8601 |
+| `id` / `slug` | — | **这个频道在这台机器上**的身份（`ws_` 开头），app 首次打开时生成并写回；分享时不带走，不要手写 |
+
+`card.id` 与顶层 `id` 至少要有一个。**为什么分成两个**：同一张卡可以开出很多个频道（你自己开第二个号、
+别人拿去用），卡的身份要在所有这些频道之间保持一致，频道的身份要各不相同——塞进一个字段，分享和复刻就一定有一边是错的。
 
 其余全部为可选段。未知字段被保留（passthrough），但别依赖这一点存私货。
 
-## identity 层（可选）
+## profile + format（这是个什么频道 · 可选）
 
-`identity`：定位 / 人设 / 受众 / 格式（orientation 等）——描述「这是个什么频道」。
+- `profile`：定位 / 人设 / 受众 / 口号 / 简介……——描述「这是个什么频道」。这些多半是**作者本人**的，
+  分享前用 `questions` 把它们点名（见下文「分享与问卷」），收卡人会被问到、换成他自己的。
+- `format`：成片形态的三个枚举（`orientation` / `persona` / `captions`），写了就三个全写（严）。
 
 ## style 层（全部可选段；段出现则段内严校验）
 
@@ -89,10 +95,28 @@
 
 **清单与枚举取值不在这里抄**:看 `generated/card-schema.md` 的「写了某一段，就必须写全的字段」
 一节,那张表由 app 源码里的 schema 直接生成。这里曾经放过一份手抄的快照,它漏掉了
-`identity.format` 下的三个必填枚举(`orientation` / `persona` / `captions`)——有人照着写卡就踩了。
+`format` 下的三个必填枚举(`orientation` / `persona` / `captions`)——有人照着写卡就踩了。
 
-写完用 `channek check <卡目录>` 验,它报的字段路径和生成表一一对应。
+写完用 `channek check <频道目录>` 验,它报的字段路径和生成表一一对应。
 
 > 实测教训:`captions` 段写成 `{style, maxCharsPerLine, docRef}` —— 前两个是自造字段
 > (schema 是 passthrough,收下但没人读),而四个真必填字段一个没填。卡因此不合法,
 > 表现出来却是「设置页整页显示别的频道的卡」,查了半小时源码才定位到。
+
+## 频道独有的几段
+
+| 段 | 内容 | 说明 |
+|---|---|---|
+| `plugins` | 频道插件目录（相对频道根，如 `plugins/acme.talkfast-suite`） | 住在频道里、随卡分享的插件；收卡人打开频道时先过信任卡才加载。只有这个频道用的插件放这里，多个频道都用的做成全局插件、走 `requires.plugins` |
+| `agent.guide` | 工作流说明（如 `sop/README.md`） | 写进频道根 `AGENTS.md` 托管块的「先看这里」 |
+| `agent.skills` | skill 目录（如 `sop/skills`） | 挂到频道根 `.claude/skills/`；写了就覆盖 `layout.cardAssets.libraries.skills` |
+| `agent.scripts` | 脚本目录（如 `sop/kit/scripts`） | 同样写进「先看这里」，提醒 agent 跑之前先读脚本开头的用途 |
+| `questions` | 用这张卡开频道时问的题，键是本文件的字段路径（如 `profile.persona`），值 `{ label, example?, optional? }` | 只认这里点名的键（使用者不能借问卷改卡的任意字段）；不答就留空 |
+| `layout.sections[].recipe` | `true` = 这个区是菜谱（如质检教训） | 分享时随卡走、算卡文件；不标的区是做出来的东西，不带 |
+
+## 分享与问卷（拷贝语义）
+
+导出 `.channekcard` 带走的是**做法**：频道卡（去掉顶层 `id` / `slug`）+ 频道里的做法文件 + 频道插件 +
+按 `requires` 携带的全局插件。**不带**：`layout.contentDir` 与没标 `recipe` 的 `sections`、点开头的本机状态、
+生成物、`bundle.omit` 声明的东西。`questions` 点名的字段导出时撤下原值、改作那道题的示例。
+导出器还会扫一遍做法文件，提示写死了频道名或人设的地方——别人用这张卡时 agent 也会照着说，建议改成通用说法。

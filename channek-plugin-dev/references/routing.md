@@ -31,7 +31,7 @@
 | 媒体探测 / 导入 | `media.analyzer` / `media.importer` | |
 | 内容理解（转写 / 静音 / 镜头…） | `ai.analyzer`（与 `media.analyzer` 不是一回事） | |
 | AI 工具 / 宏 / 受托执行 | `ai.tool` / `ai.macro` / `ai.delegate` | |
-| 携带风格卡模板（出现在建频道向导） | `workspace.styleCard` | T0 |
+| 携带频道卡模板（出现在建频道向导） | `workspace.styleCard` | T0 |
 | 工件类型 / 目录布局 preset | `workspace.artifactKind` / `workspace.layout` | T0 |
 | 运营中心数据源 | `operations.dataSource` | |
 | 剪辑台面板 / 检查器 / 素材源 / 时间轴徽标 | `editor.panel` / `editor.inspector` / `editor.assetSource` / `editor.timelineBadge` | |
