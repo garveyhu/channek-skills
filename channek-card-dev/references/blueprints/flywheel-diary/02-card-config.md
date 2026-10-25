@@ -16,7 +16,7 @@
 | `platforms` · `cover` | 23 | 3% | 四平台开关 + 封面套件指针 |
 | `brand` | 58 | 6% | design token + IP 吉祥物 + 代码配色 |
 | `pipeline` | 41 | 4.5% | 九步（**只是 key→step 映射**） |
-| `layout` | 104 | 11% | 目录 + 22 条工件落点 + 8 个资源库 + 9 条文档 |
+| `layout` | 103 | 11% | 目录 + 22 条工件落点 + 8 个资源库 + 8 条文档 |
 | `prompts` | 7 | 1% | 五份提示词登记 |
 | **`config`** | **460** | **50%** | **8 组 54 项创作参数** |
 | `presentation` | 14 | 2% | 三个功能区 |
@@ -42,9 +42,9 @@
   "formatVersion": 1,             // 生态级 schema 版本，全生态统一
   "id": "ws_s1wapvwedqmb",        // ← 这个频道在这台机器上的身份：app 首次打开时生成写回
   "slug": "ch-wedqmb",            // ← 同上。分发的卡里不写，导出时自动剥掉
-  "name": "飞轮日记",              // 唯一必填
+  "name": "飞轮日记",              // 必填
   "card": {
-    "id": "<作者>.<频道>",          // 卡自己的身份：反域名式，小写点分
+    "id": "<作者>.<频道>",          // 必填·卡自己的身份：反域名式，小写点分
     "slug": "feilun-diary",       // ASCII 短名
     "version": "1.0.0",           // 这张卡自己的版本，配 CHANGELOG
     "face": "v2-鲜艳潮IP",          // ← 人话字符串，不是枚举
@@ -55,12 +55,13 @@
 
 - **两层身份分开**：顶层 `id` / `slug` 是「这个频道」——收卡人用你的卡开出来的是另一个频道，
   所以它不出门；`card.id` 是「这张卡」——血缘、市场、「从原卡更新」都认它，所以它跟着卡走。
-  **写给别人用的卡写 `card.id`，顶层 `id` 留给 app。** 最小合法频道卡只要 `name` 一个字段。
+  **手写的卡写 `card.id`，顶层 `id` / `slug` 留给 app**（导出卡包、拿卡建新频道时都会剥掉）。
+  最小合法频道卡四个字段：`schema` / `formatVersion` / `name` / `card.id`。
 - **`formatVersion` 与 `card.version` 分开两个字段**——前者是生态契约，后者是你的发版号。
 - **`card.face` 是一句话标签，带版本前缀**。同作者其它卡分别是 `"v1-卡通经济学"` /
   `"纸白编辑感·墨绿点睛"` / `"暖灯深夜·纸感人声"`。它回答「这张卡长什么脸」，一眼可辨。
-- **卡根就是频道根**。`channel.json` 是内核唯一认的固定文件名，除此之外每个目录名都由卡声明——
-  旧结构里那个写死的 `风格卡/` 子目录已经退役。
+- **卡根就是频道根**。`channel.json` 是内核唯一认的固定文件名，只认频道根这一份；
+  除此之外每个目录名都由卡声明，内核不认任何写死的子目录。
 
 ## `profile` 与 `format`：人设归人设，格式归做法
 
@@ -74,7 +75,7 @@
 "format": { "orientation": "landscape", "persona": "none", "captions": "sentence" }
 ```
 
-旧卡把这两样捆在一个 `identity` 段里，拆开是因为**它们的变化率不同**：
+这两样分成两段，是因为**它们的变化率不同**：
 
 - **`profile` 是「这个频道是谁」**——换一个人用这套做法，这些值全都该换。分享时它们不当身份带走，
   可以被 `questions` 点名、导出时撤下原值改作示例（见下文「问卷」）。
@@ -137,9 +138,8 @@
 | `layout.artifacts.*` | **条目目录**（`<contentDir>/<entryDirName>/`） |
 | `brandAssets.banners[]` / `avatar[]` | **`brandAssets.root`** |
 
-三套。旧卡有四套——卡住在子目录里时，「卡根」和「频道根」是两回事，`prompts` 相对前者、
-`contentDir` 相对后者，最容易写错的就是这一对。频道卡把卡根并进了频道根，这一套就没了。
-剩下三套写卡时仍要逐条对照，别凭感觉。
+三套。卡根就是频道根，所以不存在「相对卡目录」还是「相对频道根」的分别——
+卡里写的路径一律从频道根起算。剩下这三套写卡时仍要逐条对照，别凭感觉。
 
 ### `cardAssets.libraries`：英文语义名 → 实际目录
 
@@ -174,7 +174,6 @@
   "locks.visualStyle.docRef":  "brand/locks/画风锁.md",
   "locks.motionSound.docRef":  "brand/locks/动效音线锁.md",
   "captions.docRef":           "brand/字幕样式/README.md",
-  "docs.charter":              "channel.md",
   "docs.ipBrief":              "brand/品牌文档/IP定位书.md",
   "docs.brandSpec":            "brand/品牌文档/品牌规范.md",
   "docs.engineBlocks":         "sop/kit/snippets/引擎积木速查.md",
@@ -193,12 +192,13 @@ config.sound（15 个机器值）  ←hint 指向→  docs["locks.motionSound.do
 
 `config.sound` 那一组的 hint 直写：「动效音线锁的机器值（**原 locks.motionSound**·人读判据在锁文档）」。
 
-**段位迁移了，引用名不变，老代码不断。** 这是可迁移性的一个范例做法——
-从旧卡迁到频道卡又验证了一次：九个值的路径全换了，九个键一个没动。
+**段位迁移了，引用名不变。** 这是可迁移性的一个范例做法。注意方向只有一个：
+内核要读的机器值（画风锁、配音、字幕、冻结、发布账号……）**只认 `config` 段里的声明**，
+卡里即便还留着 `locks` 之类的段，也不会替 `config` 兜底——`locks.*.docRef` 只剩「挂载点的名字」这一个身份。
 
-> 前 8 个键是[内核认识的固定挂载点](03-agents-md.md#layoutcardassetsdocs-的八个挂载点)，
-> 会渲进 AGENTS.md 的「频道的脸与法」节。第 9 个 `docs.engineBlocks` 是自造键——照样能挂，
-> 只是渲染时直接显示键名。
+> 前 7 个键是[内核认识的固定挂载点](03-agents-md.md#layoutcardassetsdocs-的七个挂载点)，
+> 会渲进 AGENTS.md 的「频道的脸与法」节。第 8 个 `docs.engineBlocks` 是自造键——照样能挂，
+> 只是渲染时直接显示键名。宪章不在这里挂：它就写在 `AGENTS.md` 的手写区，不是一份单独的文件。
 
 ### `artifacts`：22 条语义 id → 条目内相对路径
 
@@ -624,7 +624,7 @@ IP 形象                                      → 保留全部权利
 
 ```
 | 文件夹 / 文件  | 装什么                         | 谁指引用它                                  | 机制 |
-| `channel.md`   | 频道最高法律…                  | `layout.cardAssets.docs['docs.charter']`    | ①→③ |
+| `AGENTS.md` 下半「宪章」 | 频道最高法律…    | 托管块「先看这里」指过去                     | ①→③ |
 | `sop/skills/`  | 随卡分发的流程说明书            | `layout.cardAssets.libraries.skills`        | ①→③ |
 | `brand/audio/` | 进场 / 转场 / 交互 / 背景乐     | `libraries.sound` · `libraries.soundIntro`  | ①  |
 ```

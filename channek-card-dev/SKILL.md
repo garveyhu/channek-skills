@@ -22,8 +22,8 @@ description: 开发、修改、校验并分享一个 Channek 频道（频道卡 
    用户听不懂不是用户的问题，是你的问题。
 2. **一次只问一两个问题**，别一口气抛一张问卷。用户答不上来就给 2~3 个带推荐的选项让他挑
    （「多数口播频道是：选题 → 写稿 → 配音 → 剪辑 → 发布，你也差不多？哪里不一样？」）。
-3. **用户说的是想法，不是字段名**。把「我想让我的视频都是那种手绘风」翻译成对应的卡段
-   （画风锁 `locks` + 生成默认 `generation`），不要反问他术语。
+3. **用户说的是想法，不是字段名**。把「我想让我的视频都是那种手绘风」翻译成对应的卡字段
+   （`config` 段里的画风锁那几项：`channek.visual.imagePrompt` / `negativePrompt` / `seed`），不要反问他术语。
 4. **动手前复述方案**（「你要的是一个 X 频道，流程五步…我准备这样写，对吗？」），确认后再写文件；
    **写完要交代**：每个文件是干嘛的、怎么在 app 里打开看效果、下一步能做什么。
 
@@ -56,7 +56,7 @@ description: 开发、修改、校验并分享一个 Channek 频道（频道卡 
 | **目录** | 「你的稿子、成片这些文件，习惯放什么目录结构？」 | `sop/` + `work/`：每一期放 `work/runs/<日期-slug>/` |
 | **依赖** | 「哪几步要靠外部能力（出图 / 配音 / 转写 / 发布）？有没有指定想用哪家？」 | 只声明能力不点名插件，由收卡人机器上的候选顶上 |
 
-**新手路线**：必填只有 3 个字段（`schema` · `formatVersion` · `name`），加一个 `card.id` 和一个三五步的
+**新手路线**：必填只有 4 个字段（`schema` · `formatVersion` · `name` · `card.id`），再加一个三五步的
 `pipeline` 就是一个能用的频道——先跑起来，风格与布局以后再加。不要一上来就把所有段都填满。
 
 ### 2. 写 channel.json
@@ -65,20 +65,28 @@ description: 开发、修改、校验并分享一个 Channek 频道（频道卡 
 `references/generated/card-schema.md`**——那张表由 app 源码里的 schema 生成，按 `channel.json` 的写法列，
 和 app 读卡同一份判据。`references/card-schema.md` 讲的是每一段为什么这么设计。要点：
 
-- **文件名固定、位置固定**：只能叫 `channel.json`，只能放频道根。除此之外目录随你。
-- **必填只有 3 个**：`schema: "channek.channel"` · `formatVersion: 1` · `name`。其余全部可选；
+- **文件名固定、位置固定**：只能叫 `channel.json`，只能放频道根——app 只认这一份，别的文件名、子目录里的卡都不认。
+  除此之外目录随你。
+- **必填只有 4 个**：`schema: "channek.channel"` · `formatVersion: 1` · `name` · `card.id`。其余全部可选；
   **某段一旦写了，段内引用会被严格校验**（如写了 `voice`，那 `voice.default` 必须是 `voice.profiles`
   里真实存在的一个）。
 - **两个身份别混**：`card.id` 是**卡自己**的名字，用 `<发布者>.<名字>` 点分小写（如 `acme.talkfast`；
-  `channek.*` 是官方保留）——血缘、市场、「从原卡更新」都认它，写给别人用的卡必须有；
-  顶层 `id` / `slug` 是**这个频道在某台机器上**的身份，app 首次打开时生成并写回，你不用写，分享时也不会带走。
+  `channek.*` 是官方保留）——血缘、市场、「从原卡更新」都认它，必填；版本号写 `card.version`。
+  顶层 `id` / `slug` 是**这个频道在某台机器上**的身份，app 首次打开时生成并写回，你不用写，导出时也会剥掉。
 - 频道是谁写进 `profile`（定位、受众、人设……）与 `format`（横竖屏 / 出镜 / 字幕三个枚举）；
   流程写进 `pipeline`（步序 + 每步配置）、目录写进 `layout`（含工件落点覆盖）、
   界面写进 `presentation`（启用哪些功能区）、依赖写进 `requires`——细则见
   `references/pipeline-and-artifacts.md` 与 `references/requires-and-secrets.md`。
+- **创作参数写进 `config`**：画风锁、配音、字幕、冻结闸这些内核要读的值，只认 `config` 段里的声明
+  （`channek.visual.*` / `channek.voice.*` / …），`locks` 等 style 段不会替它兜底。
 - 给 agent 的三个入口写进 `agent`：`guide`（工作流说明，如 `sop/README.md`）、`skills`（如 `sop/skills`）、
   `scripts`（如 `sop/kit/scripts`）。app 会把它们写进频道根 `AGENTS.md` 的「先看这里」一节，
   skill 挂到 `.claude/skills/`——在频道根开 Claude / Codex 就能照着走（见第 6 步）。
+- **宪章不进卡**：频道的定位、红线、口吻写在频道根 `AGENTS.md` 托管块下方的手写区——
+  标题 `## 宪章与补充约定（手写·不会被覆盖）`，下面分 `### 宪章` 与 `### 补充约定`。
+  托管块（`channek:begin` 到 `channek:end`）由 app 按卡生成，「先看这里」第一条就指向宪章；手写区同步时一字不动。
+  **打开频道只刷新已有的 `AGENTS.md`，不会新建**——手搭的频道先放一份只写手写区的 `AGENTS.md`，
+  在 app 里打开后托管块会插到它上方。
 
 > **想知道一张成熟的卡各段该占多大比重**（剧透：`config` 占一半、`pipeline` 只占很小一块）、
 > config 怎么分组、hint 怎么写、阈值为什么要配容差项——看
@@ -232,7 +240,7 @@ sop/skills/
 - `references/blueprints/flywheel-diary/`——**九步视频频道完整拆解**（全景 + 复刻清单）：
   - `01-skeleton.md`——目录骨架：做法 / 品牌 / 内容三块怎么切、哪些入库、条目内部怎么摆
   - `02-card-config.md`——成熟频道卡的比例尺 · pipeline 是重映射层 · layout 的相对基准 · config 的分组 / hint / 阈值容差对 · requires 的降级三层
-  - `03-agents-md.md`——**AGENTS.md 不手写**：托管块各节由卡的哪一段喂出来 · 信任围栏 · prompts 约定键 · docs 挂载点
+  - `03-agents-md.md`——**AGENTS.md 托管块不手写**：托管块各节由卡的哪一段喂出来 · 信任围栏 · prompts 约定键 · docs 挂载点 · 手写区（宪章 / 补充约定）
   - `04-methodology.md`——prompts / docs / skills 三件套 · skills 三层 · 单步骨架 · 装闸契约 · 范式指纹
   - `05-scripts-and-gates.md`——脚本读卡的几条路 · 退出码 · 报告契约 · HUMAN_CHECKS · 日期门 · 可移植条款
   - `06-content-ops.md`——情报分层 · 绝不双写 · 进度双轨 · 质检记忆 + 通则 · 复盘双闭环

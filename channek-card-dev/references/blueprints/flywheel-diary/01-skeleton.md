@@ -7,8 +7,7 @@
 ```
 <频道根>/
 ├── channel.json       频道卡：内核唯一认的固定文件名 → 见 02
-├── channel.md         创作宪章（最高法律）            ← docs.charter → 见 07
-├── AGENTS.md          频道说明书（托管块由卡渲染 + 手写补充块）→ 见 03
+├── AGENTS.md          频道说明书：托管块由卡渲染 + 手写区（宪章与补充约定）→ 见 03 / 07
 ├── CLAUDE.md          转发器，只写 @AGENTS.md，不复制内容
 ├── .gitignore         能重渲的不入库 → 见 templates/gitignore.txt
 ├── .channek/          这台机器上对这个频道的状态（下节详解）
@@ -59,8 +58,8 @@
 ```
 
 **`.channek/` 的语义是「这台机器上对这个频道的状态」**：删掉它频道照样能开，只丢本机偏好；
-**频道的定义一概不放在里面**。旧结构里频道身份住在 `.channek/workspace.json`，现在它搬进了
-根目录的 `channel.json`——可见、入库、随频道走。
+**频道的定义一概不放在里面**。频道身份（`ws_` 开头的顶层 `id` / `slug`）写在根目录的
+`channel.json` 里——可见、入库、随频道走；`.channek/` 里没有任何一份文件能让一个文件夹变成频道。
 
 `plugin-settings.json` 是**机器值的家**——本机绝对路径就住在这里，不进卡：
 
@@ -104,8 +103,9 @@ sop/
 └── assets/                卡自己的门面图            ← meta.cover
 ```
 
-宪章 `channel.md` 放在频道根而不是 `sop/` 里：它管的是「这个频道是谁、立场是什么」，
-比任何一步的做法都高一层，给人和 agent 一进门就看见。
+宪章不放 `sop/`，也不单开文件：它写在频道根 `AGENTS.md` 的手写区（`## 宪章与补充约定` 下的 `### 宪章`）。
+它管的是「这个频道是谁、立场是什么」，比任何一步的做法都高一层；放进 agent 一进门就读的那份文件，
+托管块「先看这里」的第一条就指向它。频道根因此只有两份说明：`channel.json` 给 app，`AGENTS.md` 给 AI。
 
 ## `brand/`：脸与法的事实源
 
@@ -267,10 +267,12 @@ AGENTS.md 手写块：
 ## 建骨架的顺序
 
 ```
-1. 建频道根，写 channel.json（最少只要 name）
+1. 建频道根，写 channel.json（最少四个字段：schema / formatVersion / name / card.id）
 2. 写 layout 段：contentDir / entryDirName / sections（菜谱类标 recipe）/ artifacts / cardAssets
 3. 按 layout 的声明 mkdir：sop/ brand/ work/ 下各库（声明和磁盘要对得上）
-4. 写 agent 段（guide / skills / scripts），在 app 里打开一次 → AGENTS.md + CLAUDE.md 自动生成
+4. 写 agent 段（guide / skills / scripts）；手建的频道先放一份 AGENTS.md（只写手写区：宪章与补充约定），
+   在 app 里打开一次 → 托管块插到它上方（打开频道只刷新已有的 AGENTS.md，文件不在不会新建；
+   在 app 里新建频道 / 用卡开频道时才会连同 CLAUDE.md 一起生成）
 5. 写 .gitignore（照 templates/gitignore.txt 改目录名）
 6. 开第一条内容，把 8 个目录 + 2 个文件的骨架建全（空目录也建；sop/kit/scripts/new-entry.sh 按卡建）
 ```

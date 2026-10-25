@@ -12,14 +12,15 @@
 | `schema` | ✅ | 恒为 `"channek.channel"` |
 | `formatVersion` | ✅ | 恒为 `1` |
 | `name` | ✅ | 显示名 |
-| `card.id` | 分享的卡必填 | **卡自己**的身份：`<publisher>.<name>` 点分小写；`channek.*` 保留官方。血缘、市场、「从原卡更新」认它 |
-| `card.slug` / `card.version` / `card.face` / `card.createdAt` / `card.modifiedAt` | — | 卡自身的元信息；时间为带时区的 ISO 8601 |
-| `id` / `slug` | — | **这个频道在这台机器上**的身份（`ws_` 开头），app 首次打开时生成并写回；分享时不带走，不要手写 |
+| `card.id` | ✅ | **卡自己**的身份：`<publisher>.<name>` 点分小写；`channek.*` 保留官方。血缘、市场、「从原卡更新」认它 |
+| `card.slug` / `card.version` / `card.face` / `card.createdAt` / `card.modifiedAt` | — | 卡自身的元信息；`card.slug` 不写就取 `card.id` 最后一段；`card.version` 是你的发版号；时间为带时区的 ISO 8601。`card` 段不收别的键（严） |
+| `id` / `slug` | — | **这个频道在这台机器上**的身份（`id` 是 `ws_` 加 12 位），app 首次打开时生成并写回；导出卡包、用卡建新频道时剥掉，不要手写 |
 
-`card.id` 与顶层 `id` 至少要有一个。**为什么分成两个**：同一张卡可以开出很多个频道（你自己开第二个号、
+**为什么分成两个**：同一张卡可以开出很多个频道（你自己开第二个号、
 别人拿去用），卡的身份要在所有这些频道之间保持一致，频道的身份要各不相同——塞进一个字段，分享和复刻就一定有一边是错的。
 
-其余全部为可选段。未知字段被保留（passthrough），但别依赖这一点存私货。
+一张最小的合法卡就是这四个字段：`schema` · `formatVersion` · `name` · `card.id`。其余全部为可选段。
+未知字段被保留（passthrough），但别依赖这一点存私货——内核不认识的段写了也没人读。
 
 ## profile + format（这是个什么频道 · 可选）
 
@@ -32,7 +33,7 @@
 | 段 | 内容 | 段内严校验 |
 |---|---|---|
 | `brand` | 品牌 token（colors / accent / 字体等） | `tokens.accent` 必须是 `tokens.colors` 里的键（严） |
-| `locks` | 画风锁 / 风格约束 | |
+| `locks` | 画风锁 / 风格约束（人读判据文档的 `docRef` 等） | |
 | `voice` | 音色档案 | `default` 必须 ∈ `profiles`（严）；遗留的 `profiles.*.modelPath` 已 deprecated——加载警告、导出剥离 |
 | `captions` | 字幕样式 | |
 | `cover` | 封面规范 | |
@@ -40,9 +41,16 @@
 | `libraries` | 素材库索引 | |
 | `generation` | 生成默认参数 | |
 | `freeze` | 冻结闸（哪些东西不许改） | |
-| `docs` | 频道知识文档索引（章程 / QC 清单…） | |
+| `docs` | 频道知识文档索引（`ipBrief` / `brandSpec` / `readme`…） | |
 | `platforms` | 平台档案表（`Record<平台, …>`） | |
-| `publish` | 发布规范 | |
+
+**内核要读的创作参数只认 `config` 段**：画风锁（`channek.visual.*`）、配音（`channek.voice.*`）、字幕
+（`channek.captions.*`）、冻结闸（`channek.freeze.*`）、发布账号（`channek.publish.accounts`）这些语义键，
+卡在 `config` 里用同名 key 声明，内核才认识；没声明就是没有。上表这些 style 段写了照样合法，但**不会替
+`config` 兜底**——想让画风锁生效，就在 `config` 里声明它。
+
+**宪章不在卡里**：频道的定位、红线、口吻写在频道根 `AGENTS.md` 的手写区（`## 宪章与补充约定（手写·不会被覆盖）`
+下的 `### 宪章`），app 生成的托管块「先看这里」第一条恒指向它。卡里没有宪章字段，也没有单独的宪章文件。
 
 ## process 层
 

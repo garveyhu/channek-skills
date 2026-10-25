@@ -1,11 +1,12 @@
 // 可抄的完整示例频道卡：口播快剪频道（6 步流水线 · 无分镜 / 无素材生成 / 无封面）
-// 抄的时候：改 name 与 card.id，删掉用不上的段——必填只有前 3 个字段（schema / formatVersion / name），
-// 写给别人用的卡再加 card.id；但**某段一旦写了，段内必填就要写全**（清单见 references/generated/card-schema.md）。
-// 顶层 id / slug（频道在这台机器上的身份）不用写：app 首次打开时生成并写回。
+// 抄的时候：改 name 与 card.id，删掉用不上的段——必填只有 4 个字段（schema / formatVersion / name / card.id）；
+// 但**某段一旦写了，段内必填就要写全**（清单见 references/generated/card-schema.md）。
+// 顶层 id / slug（频道在这台机器上的身份）不用写：app 首次打开时生成并写回，导出卡包时剥掉。
 // 写完跑 `channek check <频道目录>`，它用的是 app 读卡时同一份判据。
 // 频道目录形态（目录名你自己定，这里是推荐的「菜谱 / 菜」两半）：
 //   acme.talkfast/
 //   ├── channel.json            ← 本文件（频道卡，只能叫这个名、只能放频道根）
+//   ├── AGENTS.md               ← 给 AI 的说明：托管块由 app 按卡生成，下方手写区写宪章与补充约定
 //   ├── sop/                    ← 怎么做（菜谱）：随卡分享
 //   │   ├── README.md           ← 工作流说明（agent.guide）
 //   │   ├── skills/             ← 给 agent 的操作手册（agent.skills，会挂到 .claude/skills/）

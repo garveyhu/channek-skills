@@ -10,17 +10,17 @@
 | 扫描层 / 内部库 | 1 | 被某个闸 import，自带 CLI 用来打回归基准 |
 | 复盘 / 账本 | 2 | 在九步之外 |
 | 脚手架 `.sh` | 1 | 开题建目录（`sop/kit/scripts/new-entry.sh`） |
-| 读卡助手 | 1 | `sop/skills/_shared/channel_card.py`，52 行 ← 见下 |
+| 读卡助手 | 1 | `sop/skills/_shared/channel_card.py`，37 行 ← 见下 |
 | **渲染 / 混音 / 出图 / 发布脚本** | **0** | ← 见下 |
 
 **那个「0」比那 9 个闸更能说明这套范式。**
 
 - **没有渲染 / 发布脚本**，因为「做一件具体的事」一律是插件能力，经 `channek invoke` 调。
   频道里**一行 ffmpeg 都没有**（除了两个「量」音视频的闸）——这是设计，不是缺失。
-- **读卡助手原本也是 0**，是迁到频道卡时才长出来的一个：频道卡把旧卡的 `identity` 拆成了
-  `profile` + `format`、卡自己的身份收进了 `card` 段，而闸们是照旧卡形状写的。助手把新卡换算回
-  旧形状，**脚本只改「从哪读」，不改「读什么」**。它只读 `channel.json`、不扫任何目录，
-  所以不是「第四套」；它是一层迁移垫片，住在 `_shared/` 里，四个直读卡的脚本共用它（组件闸还留着自己那份自定位，见路 C）。
+- **读卡助手**只做两件事：定位频道根的 `channel.json` 并校验 `schema` 是 `channek.channel`，
+  以及把 `config.sections[].fields[]` 摊平成 `key → value`。返回的就是频道卡原文——人设在 `profile`、
+  横竖屏在 `format`、卡自己的身份在 `card` 段，**不做任何形状换算**。读不到卡就照常抛错：读不到卡的闸不许装作通过。
+  它只读 `channel.json`、不扫任何目录，所以不是「第四套」；住在 `_shared/` 里，四个直读卡的脚本共用它（组件闸还留着自己那份自定位，见路 C）。
 
 **规模分布也有信息**：最大的闸 2628 行，最小的 84 行。**篇幅 ≈ 那一维判据有多难判对**，
 不是 ≈ 那一步有多重要。
@@ -85,11 +85,8 @@ def channel_root() -> str:
     return os.path.abspath(os.path.join(here, *([os.pardir] * 4)))
 
 def card_path() -> str:
-    """频道卡在频道根。还没迁的旧频道才是 <卡>/card.json。"""
-    channel = os.path.join(channel_root(), "channel.json")
-    if os.path.isfile(channel):
-        return channel
-    …
+    """频道卡在频道根，只认这一份。"""
+    return os.path.join(channel_root(), "channel.json")
 
 def card_number(key: str):
     """卡里那个数值键的原值；卡不在（夹具 / 别处跑）就返 None，别自己编一个。
@@ -111,7 +108,7 @@ from channel_card import load_card                    # 读卡统一走频道卡
 WORKBENCH = ROOT / load_card()["layout"]["contentDir"]
 ```
 
-助手对旧卡（`card.json`）原样返回——还没迁的频道照旧能用，同一套闸两种卡都跑得通。
+助手只认频道根的 `channel.json`（`schema` 不是 `channek.channel` 就报错），不给任何别的文件名留回落——卡只有一种形状，闸也只写一种读法。
 
 走这条路时，**脚本默认值的来源必须写进注释**，不许拍脑袋：
 

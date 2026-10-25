@@ -49,7 +49,7 @@ sdk.onInit(async init => {
 | `workspace.info` | 当前频道信息 |
 | `content.list` / `content.detail` | 内容条目列表 / 详情 |
 | `content.readFile` | 读这条内容目录里的工件正文 |
-| `card.active` | 活动卡声明（只读投影） |
+| `card.active` | 活动卡的只读投影，字段名与频道卡一致：`id`（= `card.id`）· `name` · `slug` · `version`（= `card.version`，未声明为 null）· `sections` · `defaultSection` · `profile?`（bio / slogan / persona / niche）· `platforms?` · `docRefs?`。没有 `cardVersion` / `identity` 这类旧名 |
 | `card.brandAssets` | 卡品牌资产 |
 | `assets.overview` | 素材概览 |
 | `operations.snapshot` | 运营快照 |

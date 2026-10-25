@@ -10,7 +10,7 @@
 | | 放哪 | 读者 | 形态 | 卡里怎么登记 |
 |---|---|---|---|---|
 | **prompts** | `sop/prompts/` | 某一步的模型 | 作业指令（纯文本） | `prompts` 段，键→频道根相对路径 |
-| **docs** | `channel.md` · `brand/` · `sop/` 各处 | 整个 AI 层（注入上下文） | 判据文档 | `layout.cardAssets.docs` 的 8 个挂载点 |
+| **docs** | `brand/` · `sop/` 各处（宪章另在 `AGENTS.md` 手写区） | 整个 AI 层（注入上下文） | 判据文档 | `layout.cardAssets.docs` 的 7 个挂载点 |
 | **skills** | `sop/skills/` | 用户自己的 coding agent | 操作手册 | `agent.skills`（旧写法 `layout.cardAssets.libraries.skills` 仍认） |
 
 **三者互相引用、绝不复制。** skill 引用 prompts，不抄一份判据进来——抄一份就是第二个真相源，

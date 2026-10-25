@@ -15,8 +15,7 @@
 ```
 links.feilun-diary/
 ├── channel.json  ← 频道卡：912 行（config 段占一半）        │  机器真相源
-├── channel.md    ← 创作宪章（32 行）                        │
-├── AGENTS.md     ← 十二节托管块（卡渲染）+ 手写补充块         │  给 AI 的说明书
+├── AGENTS.md     ← 十二节托管块（卡渲染）+ 手写区：宪章与补充约定 │  给 AI 的说明书
 ├── CLAUDE.md     ← 转发器，只写 @AGENTS.md                   │
 ├── sop/          ← 怎么做（菜谱）：随卡分享                  │
 │   ├── README.md         工作流 + 文件夹地图（agent.guide）
@@ -50,7 +49,7 @@ links.feilun-diary/
 |---|---|---|
 | [01 · 骨架](01-skeleton.md) | 菜谱 / 菜的切分 · `.channek/` 是本机状态 · 四库 · 条目 8 目录 2 文件 · 频道级 vs 本条独有 | **建目录前** |
 | [02 · 频道卡](02-card-config.md) | 912 行卡的比例尺 · 两层身份 · pipeline 是重映射层 · layout 三套相对基准 · config 的分组 / hint / 阈值容差对 · requires 与频道插件 · 问卷与拷贝语义 | **写 channel.json 时** |
-| [03 · 频道说明书](03-agents-md.md) | 托管块十二节 ← 卡的哪一段 · 信任围栏 · `agent` 段的「先看这里」 · prompts 十个约定键 · docs 八个挂载点 · 手写区写什么 | **卡写完、第一次在 app 打开后** |
+| [03 · 频道说明书](03-agents-md.md) | 托管块十二节 ← 卡的哪一段 · 信任围栏 · `agent` 段的「先看这里」 · prompts 十个约定键 · docs 七个挂载点 · 手写区（宪章 / 补充约定）写什么 | **卡写完、第一次在 app 打开后** |
 | [04 · 方法论层](04-methodology.md) | prompts / docs / skills 三件套 · skills 三层 · 单步骨架 · 装闸契约 · 六条范式指纹 | **要写 skill 时** |
 | [05 · 脚本与闸](05-scripts-and-gates.md) | 读卡四条路 · 退出码 · 报告五层契约 · HUMAN_CHECKS · 日期门 · 可移植七条 | **要写 check 脚本时** |
 | [06 · 内容管理](06-content-ops.md) | 情报五层 · 绝不双写 · 进度双轨 · 质检记忆两层 + 九条通则 · 复盘双闭环 | **要开始做内容时** |
@@ -82,7 +81,7 @@ links.feilun-diary/
    □ contentDir / entryDirName（{date} 用 YYMMDD，日期门靠它）
    □ sections 用约定 id：intel / topics / review / qc；菜谱类的区标 recipe: true
    □ artifacts：语义 id → 条目内相对路径（描述「是什么」不描述「在哪」）
-   □ cardAssets.libraries + docs（八个挂载点）+ brandAssets
+   □ cardAssets.libraries + docs（七个挂载点）+ brandAssets
 
 3. 按 layout 的声明 mkdir，声明和磁盘要对得上                          → 01
 
@@ -92,7 +91,7 @@ links.feilun-diary/
    □ hint 写「这条尺子防的是哪种偷懒」，不写「这个数是什么」
    □ 该冻的冻（channek.freeze.*）
 
-5. 写判据文档：宪章 / 静态脸 / 动态脸 / 平台矩阵                        → 07
+5. 写判据文档：宪章（AGENTS.md 手写区）/ 静态脸 / 动态脸 / 平台矩阵      → 07
    □ 形容词一律换成可判定的形态（六种手法）
    □ 机器读 JSON + 人读 md 成对，人读那份自标「可能滞后」
    □ 平台矩阵：limit* / sweet* / video 分开，每值挂 provenance，null = 没有尺子
