@@ -120,7 +120,7 @@
 | `questions.<键>` | 必填 | object |
 | `questions.<键>.label` | 必填 | string |
 
-## 全部字段（共 308 个）
+## 全部字段（共 312 个）
 
 `[]` = 数组里的每一项，`<键>` = 由你起名的键。某个段写了，它下面标「必填」的就都得写。
 
@@ -362,6 +362,10 @@
 | `presentation.sections[].provider` | 可选 | string |
 | `presentation.defaultSection` | 可选 | string |
 | `presentation.contentSurface` | 可选 | string |
+| `appearance` | 可选 | object |
+| `appearance.cover` | 可选 | string 或 string 或 null |
+| `appearance.color` | 可选 | `indigo` / `mist` / `teal` / `moss` / `sage` / `sand` / `amber` / `clay` / `rouge` / `lilac` / `dusk` / `graphite` 或 string |
+| `appearance.icon` | 可选 | `wave` / `mic` / `film` / `book` / `pen` / `code` / `spark` / `map` / `plane` / `cup` / `leaf` / `chat` / `chart` / `news` / `music` / `camera` / `dice` / `bulb` / `globe` / `heart` / `brush` / `flask` / `cap` / `home` |
 | `meta` | 可选 | object |
 | `meta.author` | 可选 | string |
 | `meta.license` | 可选 | string |
