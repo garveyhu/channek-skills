@@ -364,8 +364,8 @@
 | `presentation.contentSurface` | 可选 | string |
 | `appearance` | 可选 | object |
 | `appearance.cover` | 可选 | string 或 string 或 null |
-| `appearance.color` | 可选 | `indigo` / `mist` / `teal` / `moss` / `sage` / `sand` / `amber` / `clay` / `rouge` / `lilac` / `dusk` / `graphite` 或 string |
-| `appearance.icon` | 可选 | `wave` / `mic` / `film` / `book` / `pen` / `code` / `spark` / `map` / `plane` / `cup` / `leaf` / `chat` / `chart` / `news` / `music` / `camera` / `dice` / `bulb` / `globe` / `heart` / `brush` / `flask` / `cap` / `home` |
+| `appearance.color` | 可选 | `red` / `orange` / `amber` / `green` / `teal` / `sky` / `blue` / `indigo` / `violet` / `pink` / `slate` / `graphite` 或 string |
+| `appearance.icon` | 可选 | `wave` / `mic` / `film` / `book` / `pen` / `code` / `spark` / `map` / `plane` / `cup` / `leaf` / `chat` / `chart` / `news` / `music` / `camera` / `dice` / `bulb` / `globe` / `heart` / `brush` / `flask` / `cap` / `home` 或 string 或 string |
 | `meta` | 可选 | object |
 | `meta.author` | 可选 | string |
 | `meta.license` | 可选 | string |
