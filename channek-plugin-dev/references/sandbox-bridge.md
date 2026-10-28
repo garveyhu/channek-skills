@@ -49,12 +49,15 @@ sdk.onInit(async init => {
 | `workspace.info` | 当前频道信息 |
 | `content.list` / `content.detail` | 内容条目列表 / 详情 |
 | `content.readFile` | 读这条内容目录里的工件正文 |
-| `card.active` | 活动卡的只读投影，字段名与频道卡一致：`id`（= `card.id`）· `name` · `slug` · `version`（= `card.version`，未声明为 null）· `sections` · `defaultSection` · `profile?`（bio / slogan / persona / niche）· `platforms?` · `docRefs?`。没有 `cardVersion` / `identity` 这类旧名 |
-| `card.brandAssets` | 卡品牌资产 |
-| `assets.overview` | 素材概览 |
-| `operations.snapshot` | 运营快照 |
+| `channel.readFile` | 读频道级文本（选题库、声音库说明这类属于整个频道的数据；遏制在频道根内，`.channek/`、`.git/` 不可见） |
+| `card.active` | 活动卡的只读投影，字段名与频道卡一致：`id`（= `card.id`）· `name` · `slug` · `version`（= `card.version`，未声明为 null）· `sections` · `defaultSection` · `docRefs?`（作者段里文件型参数：完整键 → 频道内相对路径）。人设、平台这类领域参数不在这里，用 `card.config` |
+| `card.config` | 按完整键（`段 id.短键`，如 `voice.default`、`publish.accounts`）取频道参数；插件段缺的键已按插件声明补上默认值，不给 `keys` 回整张表 |
+| `card.readDoc` | 读一份卡自己指名过的文档（`docRefs` 里的）；只收卡内相对路径 |
+| `card.brandAssets` | 头像与横幅（位置由插件从 `card.config` 读出来传入） |
+| `assets.overview` | 素材概览（扫哪些目录由插件传入） |
 | `pipeline.status` | 进度灯轨状态 |
-| `artifact.urls` / `artifact.mediaUrl` | 工件 capability URL（批量 / 单个） |
+| `artifact.urls` | 按**工件种类**点名取一条内容的授权地址：`artifact.urls(itemId, ['channek.master', 'channek.covers'])` 回 `{ byKind, files }`；`byKind[种类]` 是 `{ key, relPath, url }[]`（目录型种类 key = 去扩展名的文件名，单文件型 key 为 null）；频道不认识的种类直接报错 |
+| `artifact.mediaUrl` | 单个工件的授权地址（`artifact.urls` 的逐个兜底） |
 | `publish.platforms` | 已注册发布平台目录 |
 
 ### 导航与宿主动作（免权限，宿主逐条校验实参防钓鱼）
@@ -64,7 +67,6 @@ sdk.onInit(async init => {
 | `shell.openContent` | 打开一条内容（itemId 必须命中条目索引） |
 | `shell.openSection` | 切到一个功能区（sectionId 必须 ∈ 活动卡启用区集） |
 | `shell.openArtifact` | 把这条内容的一份产物交给 app 文件工作台 |
-| `shell.openPublishedUrl` | 系统浏览器打开**这条内容已回填的**作品链接（宿主与自己记录的 url 对账，递别的 URL 一律拒；https-only） |
 | `clipboard.writeText` | 剪贴板（需 `clipboard:write`；≤32KiB、≤10 次/分，SDK 本地先限流） |
 
 ### 写与动作 ✍
@@ -73,12 +75,11 @@ sdk.onInit(async init => {
 |---|---|
 | `content.createEntry` ✍ | 建一条内容 |
 | `content.writeFile` ✍ | 写这条内容目录里的工件 |
-| `operations.saveBacklog` ✍ / `operations.updateField` ✍ | 运营台账（revision 乐观并发，冲突刷新快照重试） |
-| `content.generateImages` ✍ / `content.regenerateCover` ✍ | 跑一次出图 / 封面（画风锁、尺寸、端点由宿主注入——插件只说「画什么」） |
+| `channel.writeFile` ✍ | 写频道级文本（频道卡与频道插件目录只读；带读到的 `revision`，中间被改过就冲突） |
 | `card.kickoff` | 从卡发起创作 |
 | `card.updateSoundMeta` ✍ | 改活动卡声音库里某条 wav 的说明卡（卡 id 宿主注入） |
-| `publish.autoFill` ✍ / `publish.backfillLinks` ✍ | 半自动发布预填 / 回填（去哪个网站由 T2 平台 provider 写死，插件指定不了目的地） |
-| `capability.invoke` ✍ | 调一条已注册能力（manifest 逐条点名 `capability:invoke` 白名单；file 类入参由宿主解析注入） |
+| `capability.invoke` ✍ | 调一条已注册能力（manifest 逐条点名 `capability:invoke` 白名单；file 类入参由宿主解析注入）。出图、出封面、发布预填都走这条 |
+| `capability.preview` ✍ / `capability.adopt` ✍ | 先看再要：preview 跑一次能力、产物不进频道、回预览 URL（file 类入参只能用 `cardRefs` 点名卡内素材）；adopt 把看中的落成正式工件，只收语义 id + 实例名（如 `channek.covers` + `16x9`），落点由卡回答 |
 | `pipeline.acknowledgeStale` ✍ / `pipeline.acknowledgeAllStale` ✍ / `pipeline.revokeStaleAcknowledgement` ✍ | 灯轨过期确认三件套（应答恒为重算后的整条灯轨） |
 
 ### 场景（依赖 `generation.preview` 贡献者）
@@ -86,7 +87,6 @@ sdk.onInit(async init => {
 | op | 说明 |
 |---|---|
 | `scene.preview` | 为这条内容烘一次场景预览，拿回一次性 `plugin://<grant>/index.html`（只能 iframe 显示） |
-| `scene.bakeClip` | 把一镜烘成无声 mp4，回可播放授权 URL（配原生 `<video controls>`） |
 | `scene.export` | 把一镜烘成 mp4 另存到用户挑的位置（原生保存框；用户取消回 `false`，不是错误） |
 
 ## 限额

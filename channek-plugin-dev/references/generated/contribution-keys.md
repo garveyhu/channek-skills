@@ -2,7 +2,7 @@
 <!-- 此文件由 pnpm gen:plugin-ref 生成，请勿手改。 -->
 # 贡献键全表（扩展点）
 
-插件在 `manifest.json` 的 `contributes` 里按这些键贡献东西。共 **41** 个。
+插件在 `manifest.json` 的 `contributes` 里按这些键贡献东西。共 **40** 个。
 
 > 这张表是**声明面**的全集——列在这里不等于每个点都已经有消费方。某个点现在有没有人读它，
 > 看它那一列的声明文件与调用处；契约本身以类型定义为准。
@@ -29,10 +29,9 @@
 | `media.analyzer` | `media.analyzer` 声明（extension-points §2.4）——让「探一个媒体文件是什么」可插拔。 | `MediaAnalyzerDecl` · `shared/ipc-contract/src/media-points.channels.ts` |
 | `media.exportPreset` | 导出预设 = 一档「容器 + 编码 + 码率 + 采样率」的纯数据声明。 | `ExportPresetDecl` · `frontend/ui/src/extensions/points/exportPreset.point.ts` |
 | `media.importer` | `media.importer` 声明（extension-points §2.4）——把「外部素材 / 第三方工程 → 初始 `.channek`」这条路做成可插拔。 | `MediaImporterDecl` · `shared/ipc-contract/src/importer.channels.ts` |
-| `operations.dataSource` | `operations.dataSource` 声明（extension-points §2.6）——运营中心的指标来源可插拔。 | `OperationsDataSourceDecl` · `shared/ipc-contract/src/operations-points.channels.ts` |
 | `production.analyzer` | `production.analyzer` 声明（extension-points §2.2）——让**进度真相模型**可插拔。 | `ProgressAnalyzerDecl` · `shared/ipc-contract/src/production-points.channels.ts` |
 | `production.step` | `production.step` / `production.template` 声明（extension-points §2.2）。 | `ProductionStepDecl` · `shared/ipc-contract/src/production-points.channels.ts` |
-| `production.template` | 出片模板 = 一组预设步序（卡 `pipeline.template` 引用之·12 §3.1）。 | `ProductionTemplateDecl` · `shared/ipc-contract/src/production-points.channels.ts` |
+| `production.template` | 出片模板 = 一组预设步序（用它开新频道时展开一次，写进新卡的 `pipeline.steps`·12 §3.1）。 | `ProductionTemplateDecl` · `shared/ipc-contract/src/production-points.channels.ts` |
 | `publish.platform` | — | `PublishPlatformDecl` · `shared/ipc-contract/src/publish.channels.ts` |
 | `ui.command` | 一条用户可触发的操作。 | `CommandDecl` · `frontend/ui/src/extensions/points/command.point.ts` |
 | `ui.contentStep` | 内容工作站「步 workbench」的可插拔声明（C0 冻结·对齐 docs/design/12-channel-system.md §3 + docs/plugin/extension-points.md §2.1 + 09-CONTRACTS §J1）。 | `ContentStepDecl` · `frontend/ui/src/extensions/points/contentStep.point.ts` |
