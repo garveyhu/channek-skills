@@ -26,7 +26,7 @@
 
 | skill | 干什么 | 什么时候醒 |
 |---|---|---|
-| [`channek-card-dev`](channek-card-dev/SKILL.md) | 做或改一个**频道**：根目录频道卡 `channel.json` 逐层过、可移植红线自检、分享成 `.channekcard`（拷贝做法、不拷作品） | 「做一个频道」·「把我的流程变成频道」·「把我的频道分享出去」 |
+| [`channek-card-dev`](channek-card-dev/SKILL.md) | 做或改一个**频道**：根目录频道卡 `channel.json` 逐层过、可移植红线自检、分享成 `.channel`（拷贝做法、不拷作品） | 「做一个频道」·「把我的流程变成频道」·「把我的频道分享出去」 |
 | [`channek-plugin-dev`](channek-plugin-dev/SKILL.md) | 造一个**插件**：选信任级 → manifest → 实现（T1 沙箱 / T2 特权）→ 调试 → 打包发布 | 「写一个 Channek 插件」·「加个主题 / 功能区 / 能力」·「这个功能该插在哪」 |
 
 每个 skill 同一副骨架。`SKILL.md` 是 agent 照着执行的工作流——步骤、取舍、自检清单；

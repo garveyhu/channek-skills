@@ -1,6 +1,6 @@
 ---
 name: channek-plugin-dev
-description: 开发一个 Channek 插件：按需求路由到扩展点与信任级（T0 声明 / T1 沙箱 / T2 特权），写 manifest，实现沙箱页或 Extension Host 代码，声明能力 provider 与前置就绪，本地调试并打包发布 .channekplugin。当用户要「写一个 Channek 插件」「给 Channek 加主题 / 图标 / 面板 / 功能区 / 查看器 / 出图 / TTS / 转写 / 发布平台能力」「接一条 capability」「打包发布插件」时使用；也管扩展点速查：「Channek 有哪些扩展点」「这个功能该插在哪」「manifest contributes 能写什么键」「suite 桥能调什么 op」「T1 能拿到什么数据」。Use when developing, debugging, or publishing a Channek plugin, or looking up extension points, contribution keys, or sandbox bridge ops.
+description: 开发一个 Channek 插件：按需求路由到扩展点与信任级（T0 声明 / T1 沙箱 / T2 特权），写 manifest，实现沙箱页或 Extension Host 代码，声明能力 provider 与前置就绪，本地调试并打包发布 .ckplugin。当用户要「写一个 Channek 插件」「给 Channek 加主题 / 图标 / 面板 / 功能区 / 查看器 / 出图 / TTS / 转写 / 发布平台能力」「接一条 capability」「打包发布插件」时使用；也管扩展点速查：「Channek 有哪些扩展点」「这个功能该插在哪」「manifest contributes 能写什么键」「suite 桥能调什么 op」「T1 能拿到什么数据」。Use when developing, debugging, or publishing a Channek plugin, or looking up extension points, contribution keys, or sandbox bridge ops.
 ---
 
 # Channek 插件开发

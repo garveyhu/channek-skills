@@ -27,7 +27,7 @@ Two skills, one job each:
 
 | skill | What it does | When it wakes |
 |---|---|---|
-| [`channek-card-dev`](channek-card-dev/SKILL.md) | Build or modify a **channel**: the channel card `channel.json` at the folder root layer by layer, portability red lines, sharing as a `.channekcard` (copies the method, not the work) | "make a channel" · "turn my workflow into a channel" · "share my channel" |
+| [`channek-card-dev`](channek-card-dev/SKILL.md) | Build or modify a **channel**: the channel card `channel.json` at the folder root layer by layer, portability red lines, sharing as a `.channel` (copies the method, not the work) | "make a channel" · "turn my workflow into a channel" · "share my channel" |
 | [`channek-plugin-dev`](channek-plugin-dev/SKILL.md) | Build a **plugin**: pick a trust tier → manifest → implement (T1 sandbox / T2 privileged) → debug → pack & publish | "write a Channek plugin" · "add a theme / section / capability" · "where does this feature plug in" |
 
 Every skill shares one skeleton. `SKILL.md` is the workflow the agent executes — steps, trade-offs,

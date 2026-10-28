@@ -1,6 +1,6 @@
 ---
 name: channek-card-dev
-description: 开发、修改、校验并分享一个 Channek 频道（频道卡 channel.json / .channekcard）。当用户要「做一个 Channek 频道」「写频道卡 / channel.json」「把我的流程变成频道」「声明出片流程 pipeline」「把频道分享给别人 / 一键复刻」「修卡的 requires / layout / presentation / questions」「打开文件夹后它不是频道 / 卡读不出来」时使用。Use when developing a Channek channel card (channel.json), creating a channel, debugging a card that won't load, or packaging a .channekcard bundle.
+description: 开发、修改、校验并分享一个 Channek 频道（频道卡 channel.json / .channel）。当用户要「做一个 Channek 频道」「写频道卡 / channel.json」「把我的流程变成频道」「声明出片流程 pipeline」「把频道分享给别人 / 一键复刻」「修卡的 requires / layout / presentation / questions」「打开文件夹后它不是频道 / 卡读不出来」时使用。Use when developing a Channek channel card (channel.json), creating a channel, debugging a card that won't load, or packaging a .channel bundle.
 ---
 
 # Channek 频道开发
@@ -11,7 +11,7 @@ description: 开发、修改、校验并分享一个 Channek 频道（频道卡 
 
 **频道 = 一个文件夹 + 根目录一份频道卡 `channel.json`**。文件夹里怎么摆完全由你定，推荐摆成两半：
 `sop/` 是**怎么做**（菜谱：流程说明、给 agent 的 skill、提示词、脚本、质检教训），
-`work/` 是**做出来的东西**（菜：每一期、选题、复盘）。分享的形态是 `.channekcard` 包——
+`work/` 是**做出来的东西**（菜：每一期、选题、复盘）。分享的形态是 `.channel` 包——
 **分享是拷贝做法，不拷作品**：收卡人拿到的是 `sop/` 那一半和这张卡，开出来的是他自己的频道。
 
 ## 怎么带用户（先读这段）
