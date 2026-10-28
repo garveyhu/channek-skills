@@ -10,7 +10,7 @@
   "steps": [                                 // 有序数组；pipeline 只有这一个字段
     { "key": "topic",   "step": "acme.topic" },
     { "key": "script",  "step": "acme.script",
-      "config": { "systemPromptRef": "sop/prompts/script.md" } },
+      "config": { "produces": "脚本.md", "note": "口播稿按真实旁白写" } },
     { "key": "review",  "step": "acme.review-gate", "optional": true },   // 第三方步
     { "key": "edit",    "step": "channek.edit" },                          // 内核剪辑步
     { "key": "publish", "step": "acme.publish" }
@@ -22,7 +22,7 @@
 |---|---|
 | `key` | 本频道内**此步实例**的稳定标识——工件归属、进度记账、灯轨锚点都用它。同一步定义可在一条 pipeline 出现多次（不同 key） |
 | `step` | 步**定义** id，在扩展点注册表解析（`production.step` 自动化面 / `ui.contentStep` 工作台面，同 id 关联为一步两面，至少命中一面） |
-| `config` | 按步 decl 的 `configSchema` 在导入 / 保存卡时静态校验 |
+| `config` | 任何步都能写 `produces`（这一步产出什么，卡片查看器画在步上）与 `note`（给人和 AI 的一句约定）；其余配置项由步 decl 的 `configSchema` 声明，在导入 / 保存卡时静态校验 |
 | `optional` | true = 步缺件或跳过时 Runner 记 skipped 继续；否则停在该步等输入 |
 
 要点：
@@ -36,6 +36,8 @@
   之后所有地方都只读 `steps`。所以手写的卡直接把步列全，别指望引用一个模板名。
 - 发布到哪些平台、配音用哪个音色这类**频道级参数不写在步上**，写进 `config` 里提供那一步的插件声明的段
   （如 `publish.accounts`），步与 agent、脚本都按完整键去取。步上的 `config` 只放这一步自己的开关。
+- **提示词不写在步上**：步 decl 用 `promptKey` 说它读卡 `agent.prompts` 的哪个键（例：`"promptKey": "script"`
+  → 卡里写 `"agent": { "prompts": { "script": "sop/prompts/script.md" } }`）。卡里没这个键，那一步就没有提示词。
 
 ## 2. 工件（artifact kind）：步骤间唯一的衔接契约
 
