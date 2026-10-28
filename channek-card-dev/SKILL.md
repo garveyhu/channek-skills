@@ -1,6 +1,6 @@
 ---
 name: channek-card-dev
-description: 开发、修改、校验并分享一个 Channek 频道（频道卡 channel.json / .channel）。当用户要「做一个 Channek 频道」「写频道卡 / channel.json」「把我的流程变成频道」「声明出片流程 pipeline」「把频道分享给别人 / 一键复刻」「修卡的 requires / layout / presentation / questions」「打开文件夹后它不是频道 / 卡读不出来」时使用。Use when developing a Channek channel card (channel.json), creating a channel, debugging a card that won't load, or packaging a .channel bundle.
+description: 开发、修改、校验并分享一个 Channek 频道（频道卡 channel.json / .channel）。当用户要「做一个 Channek 频道」「写频道卡 / channel.json」「把我的流程变成频道」「声明出片流程 pipeline」「把频道分享给别人 / 一键复刻」「修卡的 requires / layout / presentation / config / 问卷」「打开文件夹后它不是频道 / 卡读不出来」时使用。Use when developing a Channek channel card (channel.json), creating a channel, debugging a card that won't load, or packaging a .channel bundle.
 ---
 
 # Channek 频道开发
@@ -23,7 +23,7 @@ description: 开发、修改、校验并分享一个 Channek 频道（频道卡 
 2. **一次只问一两个问题**，别一口气抛一张问卷。用户答不上来就给 2~3 个带推荐的选项让他挑
    （「多数口播频道是：选题 → 写稿 → 配音 → 剪辑 → 发布，你也差不多？哪里不一样？」）。
 3. **用户说的是想法，不是字段名**。把「我想让我的视频都是那种手绘风」翻译成对应的卡字段
-   （`config` 段里的画风锁那几项：`channek.visual.imagePrompt` / `negativePrompt` / `seed`），不要反问他术语。
+   （`config` 里出图插件的画风锁段：`visual.imagePrompt` / `visual.negativePrompt` / `visual.seed`），不要反问他术语。
 4. **动手前复述方案**（「你要的是一个 X 频道，流程五步…我准备这样写，对吗？」），确认后再写文件；
    **写完要交代**：每个文件是干嘛的、怎么在 app 里打开看效果、下一步能做什么。
 
@@ -52,7 +52,7 @@ description: 开发、修改、校验并分享一个 Channek 频道（频道卡 
 | 问什么 | 白话问法 | 答不上来时的默认 |
 |---|---|---|
 | **流程** | 「从一个想法到发出去，你平时分几步？哪些步想让 AI 自动干，哪些你要亲手做？」 | 五步：选题 → 写稿 → 配音 → 剪辑 → 发布 |
-| **风格** | 「有没有固定的品牌色 / 声音 / 字幕样子 / 画风？」 | 全部留空——风格段都是可选的，以后随时补 |
+| **风格** | 「有没有固定的品牌色 / 声音 / 字幕样子 / 画风？」 | 全部留空——`config` 里的参数段都是可选的，以后随时补 |
 | **目录** | 「你的稿子、成片这些文件，习惯放什么目录结构？」 | `sop/` + `work/`：每一期放 `work/runs/<日期-slug>/` |
 | **依赖** | 「哪几步要靠外部能力（出图 / 配音 / 转写 / 发布）？有没有指定想用哪家？」 | 只声明能力不点名插件，由收卡人机器上的候选顶上 |
 
@@ -67,21 +67,31 @@ description: 开发、修改、校验并分享一个 Channek 频道（频道卡 
 
 - **文件名固定、位置固定**：只能叫 `channel.json`，只能放频道根——app 只认这一份，别的文件名、子目录里的卡都不认。
   除此之外目录随你。
-- **必填只有 4 个**：`schema: "channek.channel"` · `formatVersion: 1` · `name` · `card.id`。其余全部可选；
-  **某段一旦写了，段内引用会被严格校验**（如写了 `voice`，那 `voice.default` 必须是 `voice.profiles`
-  里真实存在的一个）。
+- **必填只有 4 个**：`schema: "channek.channel"` · `formatVersion: 2` · `name` · `card.id`。其余全部可选；
+  **某段一旦写了，段内必填就要写全、段内引用会被严格校验**（如写了 `presentation.defaultSection`，
+  它必须是 `presentation.sections` 里真实存在的一个）。
+- **顶层只认 18 个键**（`schema` `formatVersion` `id` `slug` `name` `card` `appearance` `meta` `layout`
+  `pipeline` `presentation` `agent` `config` `pluginSettings` `requires` `plugins` `runtime` `bundle`），
+  多写一个就校验失败——画幅、配音、字幕、品牌这类领域参数一律不在顶层，在 `config` 里。
 - **两个身份别混**：`card.id` 是**卡自己**的名字，用 `<发布者>.<名字>` 点分小写（如 `acme.talkfast`；
   `channek.*` 是官方保留）——血缘、市场、「从原卡更新」都认它，必填；版本号写 `card.version`。
   顶层 `id` / `slug` 是**这个频道在某台机器上**的身份，app 首次打开时生成并写回，你不用写，导出时也会剥掉。
-- 频道是谁写进 `profile`（定位、受众、人设……）与 `format`（横竖屏 / 出镜 / 字幕三个枚举）；
-  流程写进 `pipeline`（步序 + 每步配置）、目录写进 `layout`（含工件落点覆盖）、
-  界面写进 `presentation`（启用哪些功能区）、依赖写进 `requires`——细则见
-  `references/pipeline-and-artifacts.md` 与 `references/requires-and-secrets.md`。
-- **创作参数写进 `config`**：画风锁、配音、字幕、冻结闸这些内核要读的值，只认 `config` 段里的声明
-  （`channek.visual.*` / `channek.voice.*` / …），`locks` 等 style 段不会替它兜底。
-- 给 agent 的三个入口写进 `agent`：`guide`（工作流说明，如 `sop/README.md`）、`skills`（如 `sop/skills`）、
-  `scripts`（如 `sop/kit/scripts`）。app 会把它们写进频道根 `AGENTS.md` 的「先看这里」一节，
-  skill 挂到 `.claude/skills/`——在频道根开 Claude / Codex 就能照着走（见第 6 步）。
+- 流程写进 `pipeline.steps`（步序 + 每步配置，只有这一种写法）、目录写进 `layout`（含工件落点覆盖）、
+  界面写进 `presentation`（启用哪些功能区）、依赖写进 `requires`、市场筛选标签写进 `meta.tags`
+  （如 `["视频", "横屏"]`）——细则见 `references/pipeline-and-artifacts.md` 与 `references/requires-and-secrets.md`。
+- **一切参数写进 `config`**，它有两种段：
+  - **作者段** `{ id, name, group?, hint?, fields }`：字段定义和值都在卡里。频道是谁写进 id 为 `profile`
+    的作者段（赛道、受众、人设……）；设计 token 放进一个 JSON 文件（惯例 `brand/tokens.json`），用作者段字段
+    `brand.tokens`（`fileRef`）指过去；素材目录这类位置也是参数（惯例 `library.asset`、`library.scenes`）；
+    质检阈值、声场这类你自己的 skill 和脚本要读的值同理。
+  - **插件段** `{ id, plugin, values }`：卡里只存值，字段定义在那个插件清单的 `channelConfig` 里——画幅、
+    字幕、配音、画风锁、发布账号这类由插件读的参数走这种。段 id 和字段名照插件清单写，插件写进 `requires.plugins`。
+
+  完整键 = 段 id + `.` + 字段短键（`profile.persona`、`captions.maxLines`），AGENTS.md、`channek card`、
+  插件都按完整键取值。**内核不按名字读任何参数**：没人读的参数只是一行展示。
+- 给 agent 的入口全写进 `agent`：`guide`（工作流说明，如 `sop/README.md`）、`skills`（如 `sop/skills`）、
+  `scripts`（如 `sop/kit/scripts`）、`kickoff`（开工提示）、`prompts`（名字 → 提示词）、`docs`（名字 → 要先读的文档）。
+  app 会把它们写进频道根 `AGENTS.md`，skill 挂到 `.claude/skills/`——在频道根开 Claude / Codex 就能照着走（见第 6 步）。
 - **宪章不进卡**：频道的定位、红线、口吻写在频道根 `AGENTS.md` 托管块下方的手写区——
   标题 `## 宪章与补充约定（手写·不会被覆盖）`，下面分 `### 宪章` 与 `### 补充约定`。
   托管块（`channek:begin` 到 `channek:end`）由 app 按卡生成，「先看这里」第一条就指向宪章；手写区同步时一字不动。
@@ -101,9 +111,10 @@ description: 开发、修改、校验并分享一个 Channek 频道（频道卡 
 channek check <频道目录>     # 随 Channek app 安装
 ```
 
-它报的是 `channel.json` 里的字段路径（如 `format.persona：Invalid enum value`），对照
-`references/generated/card-schema.md` 就能改。零错误才算过。它还会提醒：频道目录名与 `card.id` 不一致、
-`agent` 指向的目录不存在。
+它报的是 `channel.json` 里的字段路径（如 `presentation.defaultSection：…`），对照
+`references/generated/card-schema.md` 就能改；`config` 里的插件段按本机装着的插件清单校验（如
+`config.captions：captions.stroke must be one of: …`）。零错误才算过。它还会提醒：频道目录名与 `card.id` 不一致、
+`agent` / `plugins` 指向的路径不存在、插件段对应的插件没装（值没校验）。
 
 **为什么这道闸必须排在最前**：卡不合 schema 时，app 打开这个文件夹后**不会当成频道**——
 它会先按普通文件夹打开，顶上一条横幅写着「这里的频道卡没能认出来」和出错的字段。
@@ -117,7 +128,8 @@ channek check <频道目录>     # 随 Channek app 安装
 
 **最容易踩的一类**：**可选段一旦写了，段内必填字段一个都不能少**。
 「这个段可以不写」≠「段内字段可以不填」。完整清单见 `references/generated/card-schema.md` 的
-「写了某一段，就必须写全的字段」一节——`format` 三个枚举、`brand.tokens` 六项都在那里。
+「写了某一段，就必须写全的字段」一节。另一类同样常见：**顶层多写了一个键**（拼错的段名、照着别处抄来的旧段），
+`channek check` 会报 `Unrecognized key(s)`——删掉它，那个参数该进 `config`。
 
 ### 4. 过可移植红线（每次保存前自检）
 
@@ -158,11 +170,11 @@ sop/skills/
 ```
 
 **每份 SKILL.md 的骨架**：frontmatter（何时用 / 不用）→ 吃什么 / 交出什么（**说语义 id**）
-→ 怎么做（引用卡的 `prompts`，别复制判据）→ 要读的卡值（说明为什么不能写死）
+→ 怎么做（引用卡的 `agent.prompts`，别复制判据）→ 要读的卡值（说明为什么不能写死）
 → 要调的能力（**只写 id**，参数让人 `channek cap` 问）→ 交出前自检 → 卡住了怎么办。
 
-> **`prompts` 与 `skills` 的分工**：prompts 是**喂给模型的作业指令**（卡的 `prompts` 段引用它，
-> 推荐放 `sop/kit/prompts/`），skills 是**给 agent 的操作手册**。skill 引用 prompts，不复制——
+> **`prompts` 与 `skills` 的分工**：prompts 是**喂给模型的作业指令**（卡的 `agent.prompts` 登记它，
+> 推荐放 `sop/prompts/`），skills 是**给 agent 的操作手册**。skill 引用 prompts，不复制——
 > 复制就是第二个真相源，改一处忘一处。
 
 再写一份 `sop/README.md` 讲清整条流程（卡里写 `agent.guide`），频道自带的脚本放 `sop/kit/scripts/`
@@ -203,9 +215,9 @@ sop/skills/
 - **不会带走的**：`layout.contentDir` 与没标 `recipe` 的 `sections`（做出来的东西）、点开头的本机状态
   （`.channek/`、`.claude/`）、`node_modules` 等生成物，以及你在 `bundle.omit` 里声明的大资产
   （带 `reason`，导入时会原样告诉收卡人「这块要你自己补」）。
-- **身份问收卡人**：人设、口号这类属于你本人的字段，写进 `questions`（如
-  `"profile.persona": { "label": "人设" }`）。导出时它们的值会撤下、改作示例；收卡人开频道时被问到，
-  可以不填，而不是顶着你的人设开工。
+- **身份问收卡人**：人设、口号这类属于你本人的字段，在 `config` 的 `profile` 段里给它挂上 `ask`（如
+  `{ "key": "persona", "name": "人设", "type": "text", "value": "…", "ask": { "example": "…" } }`）。
+  导出时它们的值会撤下、改作示例；收卡人开频道时被问到，可以不填，而不是顶着你的人设开工。
 - 上架物料写 `meta` 段，市场长文写 `STOREFRONT.md`（规范见 `references/storefront.md`）。
 - 频道在书架上的样子写 `appearance` 段（`cover` / `color` / `icon`，都可选，不写就由 app 自动给）：
   封面只收 https 链接或频道文件夹里的相对路径；颜色写键名；图标写内置图标的键名，或一张图
@@ -221,9 +233,11 @@ sop/skills/
 | 问题 | 答案 |
 |---|---|
 | 这个配置放卡里还是插件设置里？ | 因机因人而异的（路径、端点、密钥）→ 插件设置；描述创作方式本身的（步序、风格、提示词）→ 卡 |
+| 参数放 `config` 还是 `pluginSettings`？ | agent、脚本或别的插件要知道的（画幅、音色、字幕规范）→ `config`；只有那一个插件自己关心的调参（采样步数、CFG）→ `pluginSettings` |
+| 参数写成作者段还是插件段？ | 有插件在清单里声明了这一段 → 插件段，只写值；只有你自己的 skill / 脚本读 → 作者段，自己写字段定义 |
 | 想锁死某家能力提供方不许降级？ | `requires.providers[].fallback: false`；缺省是「建议优先，没装就用别家顶上」 |
 | 步骤没装会怎样？ | 灯轨照常显示 + 占位卡提示装哪个插件；标了 `optional: true` 的步会被跳过——**只降级不崩溃**，但要在 `requires.plugins` 里声明，导入向导才知道引导用户装什么 |
-| 提示词放哪？ | `sop/kit/prompts/`（纯文本），`prompts` 段登记相对路径，步骤配置引用它 |
+| 提示词放哪？ | `sop/prompts/`（纯文本），`agent.prompts` 登记（键用步骤的 `promptKey`），开工提示写 `agent.kickoff` |
 | 插件放频道里还是装成全局？ | 只有这个频道用 → 频道插件（`plugins/<id>/` + 卡的 `plugins`）；多个频道都用 → 全局插件 + `requires.plugins` |
 | 某个区（如质检教训）分享时要不要带？ | 是做法的一部分 → 在 `layout.sections` 里标 `recipe: true`；是做出来的东西 → 不标，默认不带 |
 
@@ -233,7 +247,7 @@ sop/skills/
 - `references/card-schema.md`——每一段为什么这么设计（讲道理，字段真值以生成表为准）
 - `references/pipeline-and-artifacts.md`——pipeline / layout / 工件契约与解耦原理
 - `references/requires-and-secrets.md`——requires 依赖声明、能力偏好链、密钥推导
-- `references/channel-template.jsonc`——可抄的完整示例频道卡（口播快剪 6 步频道）
+- `references/channel-template.jsonc`——可抄的完整示例频道卡（口播快剪 6 步频道·含作者段、插件段与问卷）
 - `references/storefront.md`——meta 段与 STOREFRONT.md 上架规范
 - `references/first-content-run.md`——**卡写完之后**：第一次拿它跑一条内容会踩什么（三条铁律 / 交接链 / 素材分层 / 验收原则 / 水土不服清单）
 
@@ -244,9 +258,9 @@ sop/skills/
 - `references/blueprints/flywheel-diary/`——**九步视频频道完整拆解**（全景 + 复刻清单）：
   - `01-skeleton.md`——目录骨架：做法 / 品牌 / 内容三块怎么切、哪些入库、条目内部怎么摆
   - `02-card-config.md`——成熟频道卡的比例尺 · pipeline 是重映射层 · layout 的相对基准 · config 的分组 / hint / 阈值容差对 · requires 的降级三层
-  - `03-agents-md.md`——**AGENTS.md 托管块不手写**：托管块各节由卡的哪一段喂出来 · 信任围栏 · prompts 约定键 · docs 挂载点 · 手写区（宪章 / 补充约定）
+  - `03-agents-md.md`——**AGENTS.md 托管块不手写**：托管块各节由卡的哪一段喂出来 · 信任围栏 · `agent` 段的提示词与文档 · 手写区（宪章 / 补充约定）
   - `04-methodology.md`——prompts / docs / skills 三件套 · skills 三层 · 单步骨架 · 装闸契约 · 范式指纹
   - `05-scripts-and-gates.md`——脚本读卡的几条路 · 退出码 · 报告契约 · HUMAN_CHECKS · 日期门 · 可移植条款
   - `06-content-ops.md`——情报分层 · 绝不双写 · 进度双轨 · 质检记忆 + 通则 · 复盘双闭环
   - `07-style-and-publish.md`——指引机制 · 宪章 vs config · 静 / 动两张脸 · 判据手法 · token 防线 · 平台矩阵 + provenance
-  - `templates/`——可抄模板（config 段、单步 skill 填空骨架、gitignore）
+  - `templates/`——可抄模板（config 段：两种段 + 八种字段类型 + 问卷、单步 skill 填空骨架、gitignore）

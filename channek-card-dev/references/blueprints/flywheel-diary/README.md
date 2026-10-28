@@ -13,8 +13,8 @@
 放哪，都由频道卡声明。飞轮日记按「菜谱 / 菜」来摆：
 
 ```
-links.feilun-diary/
-├── channel.json  ← 频道卡：912 行（config 段占一半）        │  机器真相源
+feilun-diary/
+├── channel.json  ← 频道卡：771 行（config 段占六成）        │  机器真相源
 ├── AGENTS.md     ← 十二节托管块（卡渲染）+ 手写区：宪章与补充约定 │  给 AI 的说明书
 ├── CLAUDE.md     ← 转发器，只写 @AGENTS.md                   │
 ├── sop/          ← 怎么做（菜谱）：随卡分享                  │
@@ -24,7 +24,7 @@ links.feilun-diary/
 │   ├── kit/              scripts/（1 个脚手架）· scenes/ · snippets/
 │   └── lessons/踩坑账.md  114 条坑 → 9 道机器闸（recipe: true，随卡走）
 ├── brand/        ← 品牌资产（只有视频频道才需要）：token / 风格锁 / 封面 / 平台矩阵 / 字幕 / IP / 音效 …
-├── plugins/      ← 频道插件：links.feilun-suite（素材区 + 运营区 + 富灯轨）
+├── plugins/      ← 频道插件：acme.feilun-suite（素材区 + 运营区 + 富灯轨）
 └── work/         ← 做出来的东西（菜）：不进卡包
     └── inbox/ 选题 · intel/ 情报 · runs/<YYMMDD-slug>/ 每一期 · review/ 复盘
 ```
@@ -48,8 +48,8 @@ links.feilun-diary/
 | 章 | 讲什么 | 什么时候读 |
 |---|---|---|
 | [01 · 骨架](01-skeleton.md) | 菜谱 / 菜的切分 · `.channek/` 是本机状态 · 四库 · 条目 8 目录 2 文件 · 频道级 vs 本条独有 | **建目录前** |
-| [02 · 频道卡](02-card-config.md) | 912 行卡的比例尺 · 两层身份 · pipeline 是重映射层 · layout 三套相对基准 · config 的分组 / hint / 阈值容差对 · requires 与频道插件 · 问卷与拷贝语义 | **写 channel.json 时** |
-| [03 · 频道说明书](03-agents-md.md) | 托管块十二节 ← 卡的哪一段 · 信任围栏 · `agent` 段的「先看这里」 · prompts 十个约定键 · docs 七个挂载点 · 手写区（宪章 / 补充约定）写什么 | **卡写完、第一次在 app 打开后** |
+| [02 · 频道卡](02-card-config.md) | 771 行卡的比例尺 · 两层身份 · pipeline 是重映射层 · layout 两套相对基准 · config 的作者段 / 插件段 / hint / 阈值容差对 · token 进文件 · requires 与频道插件 · 问卷与拷贝语义 | **写 channel.json 时** |
+| [03 · 频道说明书](03-agents-md.md) | 托管块十二节 ← 卡的哪一段 · 信任围栏 · `agent` 段的「先看这里」· 提示词与文档 · 手写区（宪章 / 补充约定）写什么 | **卡写完、第一次在 app 打开后** |
 | [04 · 方法论层](04-methodology.md) | prompts / docs / skills 三件套 · skills 三层 · 单步骨架 · 装闸契约 · 六条范式指纹 | **要写 skill 时** |
 | [05 · 脚本与闸](05-scripts-and-gates.md) | 读卡四条路 · 退出码 · 报告五层契约 · HUMAN_CHECKS · 日期门 · 可移植七条 | **要写 check 脚本时** |
 | [06 · 内容管理](06-content-ops.md) | 情报五层 · 绝不双写 · 进度双轨 · 质检记忆两层 + 九条通则 · 复盘双闭环 | **要开始做内容时** |
@@ -57,7 +57,7 @@ links.feilun-diary/
 
 模板在 [`templates/`](templates/)：
 
-- [`config-section.jsonc`](templates/config-section.jsonc) —— `config` 段七种字段类型 + 十四个语义键
+- [`config-section.jsonc`](templates/config-section.jsonc) —— `config` 的作者段 / 插件段 + 八种字段类型 + 问卷
 - [`step-skill-skeleton.md`](templates/step-skill-skeleton.md) —— 单步 skill 的填空骨架
 - [`gitignore.txt`](templates/gitignore.txt) —— 频道 `.gitignore`
 
@@ -70,35 +70,38 @@ links.feilun-diary/
    ├─ 怎么做 → 进做法（方法、判据、token、提示词、流程、质检教训）：sop/ brand/
    └─ 做出来的 → 进作品（情报、选题、成片、复盘）：work/
 
-1. 写名字 + card 段 + profile / format + pipeline                     → 02
-   □ name（唯一必填）；card.id / card.slug / card.face / card.version
+1. 写身份 + card 段 + 频道定位 + pipeline                             → 02
+   □ schema / formatVersion: 2 / name / card.id 四个必填；card.slug / card.version 可选
    □ 顶层 id / slug 不用写：app 首次打开时生成并写回，导出时自动剥掉
-   □ profile 八个字段（slogan / mindWord / strategy 不是装饰，AI 会读）
-   □ format：横竖屏 / 数字人 / 字幕颗粒（视频频道才写）
-   □ pipeline：从九步超集里抽步、改成你的行话（3 / 6 / 9 步都行）
+   □ config 里一个 profile 作者段：八个字段（slogan / mindWord / strategy 不是装饰，AI 会读）
+   □ 视频频道再加出片插件的 format 段：横竖屏 / 数字人 / 字幕颗粒（只写值）
+   □ pipeline.steps：从九步超集里抽步、改成你的行话（3 / 6 / 9 步都行）
+   □ meta.tags：视频 / 横屏 这类筛选标签
 
-2. 写 layout：目录 + 工件落点 + 资源库                                → 01 + 02
+2. 写 layout + 资源位置                                              → 01 + 02
    □ contentDir / entryDirName（{date} 用 YYMMDD，日期门靠它）
-   □ sections 用约定 id：intel / topics / review / qc；菜谱类的区标 recipe: true
+   □ sections 用惯例 id：intel / topics / review / qc；菜谱类的区标 recipe: true
    □ artifacts：语义 id → 条目内相对路径（描述「是什么」不描述「在哪」）
-   □ cardAssets.libraries + docs（七个挂载点）+ brandAssets
+   □ 素材目录写成 config 的 library 段（fileRef）；token 放 brand/tokens.json，brand.tokens 指过去
 
 3. 按 layout 的声明 mkdir，声明和磁盘要对得上                          → 01
 
 4. 写 config：把每一条判据变成一个可读可改的配置项                      → 02 + templates/
-   □ 分组，key 以组 id 为前缀
+   □ 插件声明了的段（字幕 / 配音 / 画风 / 发布…）写插件段，只写值；你自己的判据写作者段
+   □ 字段写短键，完整键 = 段 id + . + 短键
    □ 阈值配容差项（单点越界是取舍，一串越界才是塌陷）
    □ hint 写「这条尺子防的是哪种偷懒」，不写「这个数是什么」
-   □ 该冻的冻（channek.freeze.*）
+   □ 该冻的冻（出片插件的 freeze 段）
+   □ channek check 零错误
 
 5. 写判据文档：宪章（AGENTS.md 手写区）/ 静态脸 / 动态脸 / 平台矩阵      → 07
    □ 形容词一律换成可判定的形态（六种手法）
    □ 机器读 JSON + 人读 md 成对，人读那份自标「可能滞后」
    □ 平台矩阵：limit* / sweet* / video 分开，每值挂 provenance，null = 没有尺子
 
-6. 写 prompts（含 kickoff）                                          → 03 + 04
+6. 写提示词：agent.kickoff + agent.prompts（键 = 步的 promptKey）      → 03 + 04
 
-7. 写 agent 段：guide（工作流说明）/ skills / scripts                 → 03
+7. 写 agent 段其余入口：guide（工作流说明）/ skills / scripts / docs   → 03
    □ 在 app 里打开一次 → AGENTS.md 生成 → 逐节检查有没有空掉的
    □ 空掉的每一节都要问一句：是我不需要，还是卡里漏写了？
 
@@ -116,8 +119,8 @@ links.feilun-diary/
     □ 能成机器闸的当场装，别留 🔴
     □ 装闸过两步验收：反向验证 + 历史回归
 
-11. 要分享时：写 questions + bundle.omit，导出前看身份泄漏提示            → 02
-    □ 问卷点名的身份字段（人设 / 口号…）导出时撤下原值、改作示例
+11. 要分享时：给身份字段挂 ask + 写 bundle.omit，导出前看身份泄漏提示     → 02
+    □ 挂了 ask 的身份字段（人设 / 口号…）导出时撤下原值、改作示例
     □ 做法文件里写死的频道名 / 人设，导出会提示，自己判断改不改
 ```
 
@@ -125,7 +128,7 @@ links.feilun-diary/
 
 1. **手写 AGENTS.md。** 它的主体是渲染出来的。手改会被下次同步冲掉，
    而且你改的那一节本来该由卡的某个字段喂出来。→ [03](03-agents-md.md)
-2. **以为写卡主要是设计流程。** `pipeline` 不到 5%，`config` 占一半。
+2. **以为写卡主要是设计流程。** `pipeline` 只占 5%，`config` 占六成。
    流程是九行映射，工作量在「把判据变成配置项」。→ [02](02-card-config.md)
 3. **在卡里声明一个阈值就以为它生效了。** 声明本身不产生检查。
    加阈值时问一句：**谁读它？** → [06 通则七](06-content-ops.md#沉淀出的九条通则)

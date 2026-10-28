@@ -17,13 +17,13 @@
 | | 铁律 | 违反的样子 |
 |---|---|---|
 | ① | **活让能力干**：`channek invoke <能力id>` | 自己写 ffmpeg / python 脚本合成、渲染、混音 |
-| ② | **取值读卡**：`channek card <点号路径>` | 把配速、尺寸、字幕行宽、画风提示词写死在脚本里 |
+| ② | **取值读卡**：`channek card <完整键>` | 把配速、尺寸、字幕行宽、画风提示词写死在脚本里 |
 | ③ | **工件说语义 id**：`channek.master`，不说 `master.mp4` | 写死文件名——换一张卡当场瞎 |
 
 四条命令就是全部接口：
 
 ```bash
-channek card <点号路径>       # 取值。整段用 channek card layout.artifacts
+channek card <完整键>         # 取参数（如 captions.maxLines）；也认卡里的点号路径，整段用 channek card layout.artifacts
 channek caps                  # 有哪些能力、谁提供、缺的给人话提示
 channek cap <能力id>          # 这条能力吃什么参数（★ 调之前先问它，别背参数表）
 channek invoke <能力id> 参数=值 --out <目录>
@@ -81,17 +81,17 @@ sop/skills/
 在频道卡里写 `agent.skills: "sop/skills"`，app 会把它们挂到频道根 `.claude/skills/`。
 
 **每份 SKILL.md 的骨架**：frontmatter（何时用/不用）→ 吃什么/交出什么（**语义 id**）→
-怎么做（引用卡的 `prompts`，别复制判据）→ 要读的卡值（说明为什么不能写死）→
+怎么做（引用卡的 `agent.prompts`，别复制判据）→ 要读的卡值（说明为什么不能写死）→
 要调的能力（**只写 id**）→ 交出前自检 → 卡住怎么办。
 
-> `prompts/` 与 `skills/` 的分工：prompts 是**喂给模型的作业指令**（卡的 `prompts` 段引用它），
+> `prompts/` 与 `skills/` 的分工：prompts 是**喂给模型的作业指令**（卡的 `agent.prompts` 登记它），
 > skill 是**给 agent 的操作手册**。skill 引用 prompts，不复制——复制就是第二个真相源。
 
 ## 素材分层：公共的进卡，专属的进条目
 
 | 放什么 | 落哪 |
 |---|---|
-| **公共参考**：角色定妆图、跨条目复用的资产 | 卡内素材库 |
+| **公共参考**：角色定妆图、跨条目复用的资产 | 卡里声明的素材库（惯例 `config` 的 `library.asset`） |
 | **这一条片的**动作、表情、场景、道具 | 条目下的生成图落点（语义 id） |
 | 抠好的透明件 | 条目下的精灵落点（语义 id） |
 

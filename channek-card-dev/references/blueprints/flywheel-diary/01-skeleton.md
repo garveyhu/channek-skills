@@ -65,9 +65,9 @@
 
 ```json
 {
-  "links.voice-lab": { "promptWav": "<本机路径>/default-v2.wav", "ttsTimesteps": 30 },
-  "links.remotion":  { "styleCardRoot": "<本机路径>/<频道根>" },
-  "links.ffmpeg":    { "bedFloorDb": -28 }
+  "acme.voice-lab": { "promptWav": "<本机路径>/default-v2.wav", "ttsTimesteps": 30 },
+  "acme.remotion":  { "styleCardRoot": "<本机路径>/<频道根>" },
+  "acme.ffmpeg":    { "bedFloorDb": -28 }
 }
 ```
 
@@ -84,11 +84,11 @@
 
 ```
 sop/
-├── README.md              工作流 + 文件夹地图 + 三套指引机制  ← agent.guide · docs.readme
+├── README.md              工作流 + 文件夹地图 + 三套指引机制  ← agent.guide · agent.docs
 ├── STOREFRONT.md          商店页（给还没装的人看）
 ├── CHANGELOG.md           变更日志（给已装旧版的人看）
 │
-├── prompts/               作业指令 × 5              ← prompts 段
+├── prompts/               作业指令 × 5              ← agent.kickoff · agent.prompts
 │   开工.md 选题.md 脚本.md 分镜.md 审稿.md
 │
 ├── skills/                方法论 × 16               ← agent.skills → 见 04
@@ -96,8 +96,8 @@ sop/
 │
 ├── kit/                   做事要用的东西
 │   ├── scripts/           脚手架（飞轮日记只有 1 个 new-entry.sh） ← agent.scripts → 见 05
-│   ├── scenes/            频道级可复用画面组件      ← libraries.scenes
-│   └── snippets/          文字物料 + 骨架           ← libraries.reusable
+│   ├── scenes/            频道级可复用画面组件      ← library.scenes
+│   └── snippets/          文字物料 + 骨架           ← library.reusable
 │
 ├── lessons/踩坑账.md       质检教训                  ← sections[id=qc]，recipe: true → 见 06
 └── assets/                卡自己的门面图            ← meta.cover
@@ -112,22 +112,29 @@ sop/
 ```
 brand/
 ├── README.md
-├── tokens.dtcg.json       design token 人读版        ← brand.tokensRef
+├── tokens.json            设计 token（色板 / 字体 / 圆角 / 代码配色）← brand.tokens
 ├── locks/                 判据层
-│   画风锁.md              静态脸                    ← locks.visualStyle.docRef
-│   动效音线锁.md          动态脸                    ← locks.motionSound.docRef
-├── 品牌文档/ 封面/ 平台矩阵/ 字幕样式/ 音色/ 头像/ 背景/ 片头片尾/ <IP名>/
-├── audio/                 声音库                    ← libraries.sound
-│   进场/ ← soundIntro    背景乐/ ← soundBgm    转场/ 交互/
-└── library/               通用素材                  ← libraries.asset
+│   画风锁.md              静态脸                    ← visual.guide
+│   动效音线锁.md          动态脸                    ← agent.docs「动效音线锁」
+├── 品牌文档/              IP 定位书 / 品牌规范       ← agent.docs
+├── 封面/                  封面套件                  ← cover.config
+├── 平台矩阵/              四平台规格                ← publish.matrix
+├── 字幕样式/              字幕说明                  ← captions.guide
+├── 头像/ 背景/            头像与各平台横幅           ← publish.avatar · publish.<平台>.banner
+├── 音色/                  音色档与说明              ← voice 段
+├── <IP名>/                IP 定妆图 / 动作库         ← ip 段
+├── 片头片尾/              片头片尾工程 + 成片        ← 成片由 bundle.omit 点名不随卡
+├── audio/                 声音库                    ← library.sound
+│   进场/ ← library.soundIntro    背景乐/ ← library.soundBgm    转场/ 交互/
+└── library/               通用素材                  ← library.asset
 ```
 
-整个 `brand/` 由 `layout.cardAssets.brandAssets.root` 指向 → 见 07。
+整个 `brand/` 由参数 `brand.root` 指向 → 见 07。
 
 **每一行右边那个箭头很重要**：目录名是你起的，但**卡里必须有一条声明指向它**，否则
 它对 app 和收卡人的 AI 都不存在。命名规矩来自品牌目录的 README：
 
-> 人读的文档用中文（`品牌文档/`），skill 按路径读的 token 保留英文（`tokens.dtcg.json`）。
+> 人读的文档用中文（`品牌文档/`），skill 按路径读的 token 保留英文（`tokens.json`）。
 
 ## `work/`：四库
 
@@ -144,9 +151,9 @@ sop/lessons/   ← sections[id=qc]      横切 + 菜谱（所以不在 work/ 里
 **质检记忆为什么不在 `work/` 里**：它横切所有环节，而且它是「下次怎么别再犯」——是做法，不是作品。
 所以它住进 `sop/`，在卡里标 `recipe: true`，分享频道时随卡走；另外三个区标的是做出来的东西，不进卡包。
 
-**`intel` / `topics` / `review` / `qc` 是内核认识的四个约定 id**，写对了 AGENTS.md 才会渲成中文说明。
-目录名（`path`）随你起——同作者另外三个频道就把同一组 id 换成了各自的行话
-（它们还没迁到频道卡结构，下表只列目录名）：
+**`intel` / `topics` / `review` / `qc` 是同作者几个频道共用的四个惯例 id**，它们原样当标签渲进 AGENTS.md
+（内核不替它翻译），所以起得让 agent 一眼看懂就行。目录名（`path`）随你起——同作者另外三个频道就把同一组 id 换成了各自的行话
+（下表只列目录名）：
 
 | 语义 id | 视频·飞轮日记 | 视频·比奇堡 | 播客·夜话 | 图文·工具笔记 |
 |---|---|---|---|---|
@@ -156,12 +163,12 @@ sop/lessons/   ← sections[id=qc]      横切 + 菜谱（所以不在 work/ 里
 | `review` | `work/review` | *(无)* | `数据复盘` | `发布记录` |
 | `qc` | `sop/lessons` | `3-质检记忆` | *(无)* | *(无)* |
 
-**这不是命名习惯的巧合，是内核级的心智骨架。** 播客把 `intel` 用成「听友来信」
+**这不是命名习惯的巧合，是一套跨媒介通用的心智骨架。** 播客把 `intel` 用成「听友来信」
 （它的情报来源是听众投稿），第二个视频频道把 `intel` 用成「参考拆解」（拆对标片的动效规格）
 ——**同一个槽位，因媒介和阶段而异的用途**。
 
-命名上有两种做法，id 不变就都行：飞轮日记迁到频道卡后用 `work/` 下的英文短名（inbox / intel /
-runs / review）；老结构用带序号的中文名（`1-情报库` `2-选题库`…），序号让人在文件管理器里看到的
+命名上有两种做法，id 不变就都行：飞轮日记用 `work/` 下的英文短名（inbox / intel /
+runs / review）；另几个频道用带序号的中文名（`1-情报库` `2-选题库`…），序号让人在文件管理器里看到的
 就是工作顺序。轻量频道容器少，连序号和外层目录都不需要。
 
 ## 一条内容的骨架：8 个目录 + 2 个文件
@@ -268,8 +275,9 @@ AGENTS.md 手写块：
 
 ```
 1. 建频道根，写 channel.json（最少四个字段：schema / formatVersion / name / card.id）
-2. 写 layout 段：contentDir / entryDirName / sections（菜谱类标 recipe）/ artifacts / cardAssets
-3. 按 layout 的声明 mkdir：sop/ brand/ work/ 下各库（声明和磁盘要对得上）
+2. 写 layout 段：contentDir / entryDirName / sections（菜谱类标 recipe）/ artifacts；
+   素材库这类频道级目录写成 config 里的 fileRef 字段（library.*）
+3. 按卡的声明 mkdir：sop/ brand/ work/ 下各库（声明和磁盘要对得上）
 4. 写 agent 段（guide / skills / scripts）；手建的频道先放一份 AGENTS.md（只写手写区：宪章与补充约定），
    在 app 里打开一次 → 托管块插到它上方（打开频道只刷新已有的 AGENTS.md，文件不在不会新建；
    在 app 里新建频道 / 用卡开频道时才会连同 CLAUDE.md 一起生成）
@@ -283,10 +291,11 @@ AGENTS.md 手写块：
 ## 自检
 
 - [ ] 卡里声明的每一条路径，`ls` 一遍都真的存在
-- [ ] 盘上每一个做法目录，都能在频道卡里找到指向它的那一行（`layout.cardAssets` / `agent` / `prompts`）
+- [ ] 盘上每一个做法目录，都能在频道卡里找到指向它的那一行（`agent` / `config` 里的 `fileRef` / `layout`）
 - [ ] `work/` 里没有任何一份东西是「卡里那份的第二个副本」
 - [ ] 菜谱类的区（如质检教训）标了 `recipe: true`，作品类的区没标
 - [ ] `.channek/` 与 `.claude/` 已被 `.gitignore` 挡住
 - [ ] 卡里没有任何一条本机绝对路径（机器值全在 `.channek/plugin-settings.json`）
+- [ ] `channek check <频道目录>` 零错误
 - [ ] 条目骨架 8 个目录一个不少，空的也在
 - [ ] 条目名前六位是能被 `gateSinceDate` 解析的 YYMMDD

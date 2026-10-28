@@ -1,21 +1,28 @@
-// 频道卡 channel.json 的 `config` 段模板 —— 「卡自声明的可编辑配置」。
+// 频道卡 channel.json 的 `config` 段模板 —— 频道参数的唯一位置。
 //
-// 它是什么：你在 app 的卡设置页看到的每一个控件，都是这里的一条 field 声明出来的。
+// 它是什么：你在 app 的「设置 › 本频道 › 参数」里看到的每一个控件，都是一条字段声明出来的。
 // 它同时是**喂给 AI 的频道参数表**（渲进 AGENTS.md 的「频道配置」节）。
-// 一处声明，三处生效：设置页 UI · AGENTS.md · 出片各步按 key 取值。
+// 一处声明，三处生效：设置页 UI · AGENTS.md · 各步 skill / 脚本按完整键取值。
 //
-// 铁律：config 只装「一眼一个控件」的扁平项。结构体（色板、平台矩阵、封面套件）
+// 段有两种：
+//   作者段 { id, name, group?, hint?, fields }   字段定义和值都写在卡里（频道定位、声场、质检阈值……）
+//   插件段 { id, plugin, values }                卡里只存值；字段定义在那个插件清单的 channelConfig 里
+//
+// 键名：字段里写**段内短键**（`pace`），对外的**完整键 = 段 id + "." + 短键**（`voice.pace`）。
+// AGENTS.md、`channek card <完整键>`、插件读值、问卷，统一用完整键。完整键全卡唯一，撞了校验报错。
+//
+// 铁律：config 只装「一眼一个控件」的扁平项。结构体（色板、音色档、平台矩阵、封面套件）
 // 归文件——用 `fileRef` 指过去，别把 JSON 塞进 value。
 
 {
   "config": {
     "sections": [
       {
-        // id：卡内唯一、稳定。它是保存寻址 / AGENTS.md 锚点 / 体检引用的坐标，
-        //     定了就别改（改 = 用户设过的值找不到家）。
-        "id": "channek.visual",
-        "name": "画风锁",
-        "hint": "出图链统一注入的东西，改了整个频道的脸就变了",
+        // id：卡内唯一、稳定，是完整键的前缀。它是保存寻址 / AGENTS.md 分组 / 体检引用的坐标，
+        //     定了就别改（改 = 用户设过的值找不到家、读它的脚本全部取空）。
+        "id": "sound",
+        "name": "声场",
+        "hint": "动效音线锁的机器值，人读判据在锁文档",
 
         // group 只有三个值，**内核定名、卡只选归哪一组**：
         //   style    这张卡的脸，做片子时会回来动的
@@ -25,128 +32,150 @@
         "group": "style",
 
         "fields": [
-          // ── 七种字段类型，一样来一条 ──────────────────────────────
+          // ── 八种字段类型，一样来一条 ──────────────────────────────
 
           // ① text：短文本 / 长文本
           {
-            "key": "channek.visual.imagePrompt",   // 卡内全局唯一点分 key
-            "name": "出图提示词",                    // 显示名中文直写，无 i18n 层
+            "key": "vibe",                           // 段内短键；完整键是 sound.vibe
+            "name": "声场气质",                       // 显示名中文直写，无 i18n 层
             "type": "text",
-            "value": "flat illustration, <你的画风关键词>",
+            "value": "暖而不铃：转场用纸感 / 气流质地，落定用软厚音",
             "multiline": true,
-            "hint": "生图链统一注入的正向提示词",
-            "placeholder": "逗号分隔的英文关键词",
-            "suggestions": ["flat illustration", "editorial poster"]
+            "hint": "生成音效时整句进 prompt",
+            "placeholder": "一句话说清这个频道听起来是什么感觉",
+            "suggestions": ["暖而不铃", "冷峻克制"]
           },
 
-          // ①b text + valueFrom：长文本外置到卡内文件（与 value 互斥）
-          //     超过三五行的提示词就该外置——写在 JSON 里既难改也难 diff。
+          // ①b text + valueFrom：长文本外置到频道里的文件（与 value 互斥，只有作者段能用）
+          //     超过三五行的说明就该外置——写在 JSON 里既难改也难 diff。
           {
-            "key": "channek.visual.negativePrompt",
-            "name": "负向提示词",
+            "key": "avoidNotes",
+            "name": "忌用音色说明",
             "type": "text",
-            "valueFrom": "sop/prompts/负向提示词.txt"    // 频道根内相对路径（频道卡的卡根就是频道根）
+            "valueFrom": "brand/locks/忌用音色.md"     // 频道根内相对路径
           },
 
           // ② number：带单位与范围的数值
           {
-            "key": "channek.voice.pace",
-            "name": "配速（字/秒）",
+            "key": "bedFloorDb",
+            "name": "底床地板（dB）",
             "type": "number",
-            "value": 5.13,
-            "min": 3,
-            "max": 8,
-            "step": 0.01,
-            "unit": "字/秒",
-            "required": true                        // 不填就不能用；内栏「N 未填」只数它
+            "value": -28,
+            "min": -60,
+            "max": 0,
+            "step": 1,
+            "unit": "dB",
+            "required": true                        // 不填就不能用；设置页「N 未填」只数它
           },
 
           // ③ boolean
           {
-            "key": "channek.freeze.visualStyle",
-            "name": "冻结画风",
+            "key": "bgmEnabled",
+            "name": "背景乐",
             "type": "boolean",
             "value": true
           },
 
-          // ④ select：给定选项
+          // ④ select：给定选项（机器存英文枚举、界面显示中文）
           {
-            "key": "channek.captions.stroke",
-            "name": "描边样式",
+            "key": "introSource",
+            "name": "进场音来源",
             "type": "select",
-            "value": "pill",
+            "value": "fixed",
             "options": [
-              { "value": "none", "label": "无描边" },
-              { "value": "soft", "label": "柔描边" },
-              { "value": "hard", "label": "硬描边" },
-              { "value": "pill", "label": "药丸底" }
+              { "value": "fixed", "label": "固定文件" },
+              { "value": "generated", "label": "每次生成" }
             ],
             "allowUnset": false
           },
 
-          // ⑤ color
+          // ⑤ color：只收 hex（#rgb / #rrggbb / #rrggbbaa）
           {
-            "key": "brand.accent",
-            "name": "强调色",
+            "key": "waveformColor",
+            "name": "波形色",
             "type": "color",
-            "value": "#FFD12E"
+            "value": "#16C79A"
           },
 
-          // ⑥ fileRef：指向频道里的一个文件（结构体配置就走这条路；路径相对频道根）
+          // ⑥ fileRef：指向频道里的一个文件或文件夹（结构体配置、素材目录都走这条路；路径相对频道根）
           {
-            "key": "cover.config",
-            "name": "封面套件",
+            "key": "introFile",
+            "name": "进场音文件",
             "type": "fileRef",
-            "value": "brand/封面/cover.json",
-            "accept": [".json"]
+            "value": "brand/audio/进场/进场.wav",
+            "accept": [".wav", ".mp3"]
           },
 
           // ⑦ directory：本机目录。**值永不入卡**（落本机的 `.channek/`，那里是这台机器对这个频道的状态）。
           //    写了 value 会被 schema 直接拒——这是可移植性红线，不是风格建议。
           {
-            "key": "local.exportDir",
+            "key": "exportDir",
             "name": "成片导出目录",
             "type": "directory",
             "hint": "每台机器自己配，不随卡走"
+          },
+
+          // ⑧ list：字符串列表（情绪词、忌用词、平台账号这类）。别再写逗号分隔的 text 让消费方自己拆
+          {
+            "key": "sfxAvoid",
+            "name": "忌用音色",
+            "type": "list",
+            "value": ["phone ring", "service desk bell", "marimba"],
+            "hint": "每项翻成 no <x> 进生成 prompt",
+            "suggestions": ["music box", "shrill metallic"]
           },
 
           // ── brief：AGENTS.md 渲染开关（缺省 true）─────────────────
           // 标 false = 这项只进设置页，不喂给 AI。
           // 用在「AI 不需要知道、知道了反而是噪音」的项上。
           {
-            "key": "channek.visual.seed",
-            "name": "出图种子",
+            "key": "sfxSeed",
+            "name": "音效生成种子",
             "type": "number",
             "value": 9,
             "brief": false
           }
         ]
-      }
+      },
+
+      // ── ask：用这张卡开频道时要问收卡人的题 ─────────────────────
+      // 「这是谁的频道」那一类值挂 ask：导出时作者的值撤下、改作示例（题里已有 example 就不覆盖）；
+      // 收卡人开频道时被问到，不答就留空——而不是顶着作者的人设开工。
+      // 惯例放在 id 为 profile 的作者段里，用 text 字段（回答按文本写回）。
+      {
+        "id": "profile",
+        "name": "频道定位",
+        "fields": [
+          { "key": "niche", "name": "赛道", "type": "text", "value": "<你的赛道>" },
+          { "key": "persona", "name": "人设", "type": "text", "value": "<你的人设>",
+            "ask": { "example": "带你看透技术泡沫的深度拆解者" } },
+          { "key": "slogan", "name": "口号", "type": "text", "value": "<你的口号>", "ask": {} }
+        ]
+      },
+
+      // ── 插件段：只存值 ──────────────────────────────────────────
+      // 字段名、类型、选项、默认值只在插件清单的 channelConfig 里有一份，卡里不抄（抄了必然漂）。
+      // id 必须是插件声明过的段 id；值按插件声明校验，声明之外的键报警告；没写的键按插件默认值补。
+      // 插件没装时这一段按值只读显示，照常进 AGENTS.md。下面的段名与字段名对应一个出片插件的声明。
+      { "id": "visual", "plugin": "acme.production",
+        "values": { "imagePrompt": "flat illustration, <你的画风关键词>", "seed": 9,
+                    "guide": "brand/locks/画风锁.md" } },
+      { "id": "freeze", "plugin": "acme.production",
+        "values": { "visualTokens": true, "voice": true, "visualStyle": true } }
     ]
   }
 }
 
 // ══════════════════════════════════════════════════════════════════
-// 语义键（well-known keys）：内核认识的少数 key
+// 内核不按名字读任何参数
 // ══════════════════════════════════════════════════════════════════
 //
-// 用**同名 key** 声明，内核就按它取值，并在 AGENTS.md 里自动长出对应章节。
-// 用别的名字也能跑，但那是「卡私有」——只进设置页与 AGENTS.md，内核不认识。
+// 没有「起对名字内核就认」的特殊键。一个参数谁在读，只有两种答案：
+//   - 插件段：声明它的那个插件读（出图带画风锁、配音读音色档、发布读账号与横幅……）；
+//   - 作者段：你自己的 skill 和脚本按完整键读（`channek card sound.bedFloorDb`）。
+// 两种都会渲进 AGENTS.md 的「频道配置」节。所以加一个参数前先问一句：**谁读它？**
+// 答不上来，它就只是一行展示。
 //
-//   channek.visual.imagePrompt      出图正向提示词          text
-//   channek.visual.negativePrompt   出图负向提示词          text
-//   channek.visual.seed             出图种子（缺席=随机）    number
-//   channek.visual.sref             风格参考                text
-//   channek.voice.default           默认音色档              select
-//   channek.voice.pace              配速（字/秒）           number  ★ 触发「写稿硬约束」节
-//   channek.captions.highlight      关键词高亮              boolean
-//   channek.captions.maxLines       行数上限                number
-//   channek.captions.wordsPerLine   每行字数                number
-//   channek.captions.stroke         描边样式                select
-//   channek.freeze.visualTokens     冻结视觉 token          boolean ★ 为 true 时进「铁律」节
-//   channek.freeze.voice            冻结音色                boolean ★ 同上
-//   channek.freeze.visualStyle      冻结画风                boolean ★ 同上
-//   channek.publish.accounts        发布账号（逗号分隔）     text
-//
-// 注：config 的七种类型里**没有数组**。要表达清单就用逗号分隔的 text，消费方自己重组
-//     （`channek.publish.accounts` 就是这么定的）；真结构化的东西走 fileRef 指文件。
+// 什么进 config、什么进 pluginSettings：
+//   config          频道的事实与规范（画幅、音色、字幕规范、发布账号）——agent、脚本、多个插件都要知道，进 AGENTS.md
+//   pluginSettings  某个插件内部的调参（采样步数、CFG）——只有那一个插件关心，不进 AGENTS.md

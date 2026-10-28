@@ -9,9 +9,9 @@
 
 | | 放哪 | 读者 | 形态 | 卡里怎么登记 |
 |---|---|---|---|---|
-| **prompts** | `sop/prompts/` | 某一步的模型 | 作业指令（纯文本） | `prompts` 段，键→频道根相对路径 |
-| **docs** | `brand/` · `sop/` 各处（宪章另在 `AGENTS.md` 手写区） | 整个 AI 层（注入上下文） | 判据文档 | `layout.cardAssets.docs` 的 7 个挂载点 |
-| **skills** | `sop/skills/` | 用户自己的 coding agent | 操作手册 | `agent.skills`（旧写法 `layout.cardAssets.libraries.skills` 仍认） |
+| **prompts** | `sop/prompts/` | 某一步的模型 | 作业指令（纯文本） | `agent.prompts`（键 = 步的 `promptKey`）+ `agent.kickoff` |
+| **docs** | `brand/` · `sop/` 各处（宪章另在 `AGENTS.md` 手写区） | 整个 AI 层（注入上下文） | 判据文档 | `agent.docs`（名字 → 路径），或某段参数的 `guide` 字段 |
+| **skills** | `sop/skills/` | 用户自己的 coding agent | 操作手册 | `agent.skills` |
 
 **三者互相引用、绝不复制。** skill 引用 prompts，不抄一份判据进来——抄一份就是第二个真相源，
 改一处忘一处。
@@ -28,7 +28,7 @@ sop/skills/
 ├── _shared/                 ← 接口契约层（没有 SKILL.md，不是可触发的 skill）
 │   ├── 读卡与调能力.md        两条接口：怎么读卡、怎么调能力 + 本频道取值速查表
 │   ├── 装闸契约.md            元规约：往任何 check_*.py 加判据时的验收规矩
-│   └── channel_card.py       脚本读卡的唯一入口（迁到频道卡时长出来的，见 05）
+│   └── channel_card.py       脚本读卡的唯一入口（见 05）
 ├── produce-flow/            ← 编排层（总编排：交接链 / 顺序约束 / 退回定位）
 │   ├── SKILL.md
 │   └── reference/退回定位.md
@@ -42,7 +42,7 @@ sop/skills/
 
 | 层 | 解决什么 | 不这么分会怎样 |
 |---|---|---|
-| `_shared/` | 「怎么取值 / 怎么调能力 / 怎么装闸」对 15 个 skill 完全一样 | 写 15 遍，改一次要改 15 处，改漏就出现两份互相矛盾的说明书。迁到频道卡时这一层又证明了一次：卡的形状变了，脚本只改了「从 `_shared` 读」这一处 |
+| `_shared/` | 「怎么取值 / 怎么调能力 / 怎么装闸」对 15 个 skill 完全一样 | 写 15 遍，改一次要改 15 处，改漏就出现两份互相矛盾的说明书。卡的形状一变，这一层的价值就显出来：脚本只需改「从 `_shared` 读」这一处 |
 | 单步 skill | 「这一步怎么做对」 | 方法论无处安放，每次对话现讲一遍 |
 | `produce-flow` | 交接物清单 / 顺序约束 / 闸挂哪个交接口——**这三类知识不属于任何单步** | 写进单步就会变成两份，下游那份永远滞后 |
 
@@ -64,8 +64,8 @@ produce-flow 是顺序与交接的真相源。
 ### 读卡
 
 ```bash
-channek card <点号路径>       # 取一个值
-channek card layout.artifacts # 取整段（键里带点的用这个，别拿点号去钻）
+channek card <完整键>         # 取一个参数：段 id + . + 字段键（voice.pace、quality.sceneMaxSec）
+channek card layout.artifacts # 取卡里的整段（键里带点的用这个，别拿点号去钻）
 channek root                  # 频道根路径
 ```
 
@@ -205,7 +205,7 @@ description: >-
 ### 阈值由 shell 内联读卡传入，脚本不带默认值
 
 ```bash
-python scripts/check_script.py <稿件路径> --cps "$(channek card channek.voice.pace)"
+python scripts/check_script.py <稿件路径> --cps "$(channek card voice.pace)"
 ```
 
 这一行是范式的缩影：**换一张卡，闸自动换一把尺子。** 脚本里写默认值 = 卡失效了还在拿旧尺子量。

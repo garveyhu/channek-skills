@@ -7,15 +7,13 @@
 
 ```jsonc
 "pipeline": {
-  "template": "channek.explainer-9",        // 可选：继承一个 production.template 的步序
-  "steps": [                                 // 有序数组；给出则整体覆盖 template 步序
-    { "key": "topic",   "step": "channek.topic" },
-    { "key": "script",  "step": "channek.script",
-      "config": { "systemPromptRef": "prompts/script.md" } },
+  "steps": [                                 // 有序数组；pipeline 只有这一个字段
+    { "key": "topic",   "step": "acme.topic" },
+    { "key": "script",  "step": "acme.script",
+      "config": { "systemPromptRef": "sop/prompts/script.md" } },
     { "key": "review",  "step": "acme.review-gate", "optional": true },   // 第三方步
     { "key": "edit",    "step": "channek.edit" },                          // 内核剪辑步
-    { "key": "publish", "step": "channek.publish",
-      "config": { "platforms": ["bilibili"] } }
+    { "key": "publish", "step": "acme.publish" }
   ]
 }
 ```
@@ -33,8 +31,11 @@
 - **缺步只降级不崩溃**：解析不到 `step` id → 灯轨照常显示该步 + 工作台位置渲染占位卡
   （「此步由插件 X 提供 · 未安装」+ 安装引导）。
 - `channek.edit` 是内核步（进剪辑器的闸门），永远可用、不可被第三方替换。
-- 无 `pipeline` 段的旧卡自动落模板 `channek.explainer-9`（由官方出片插件提供步序；
-  没装提供方时卡体检如实报「模板未注册」）。
+- **卡里没写步，这个频道就没有步**——app 不会拿注册表里所有内容步凑一条流程。
+- 流程模板（`production.template` 贡献）只在「用模板开新频道」那一刻展开一次，把步序写进新卡的 `steps`；
+  之后所有地方都只读 `steps`。所以手写的卡直接把步列全，别指望引用一个模板名。
+- 发布到哪些平台、配音用哪个音色这类**频道级参数不写在步上**，写进 `config` 里提供那一步的插件声明的段
+  （如 `publish.accounts`），步与 agent、脚本都按完整键去取。步上的 `config` 只放这一步自己的开关。
 
 ## 2. 工件（artifact kind）：步骤间唯一的衔接契约
 
@@ -77,7 +78,9 @@
 - 覆盖顺序：kind 默认 `storage.pattern` ← preset ← 卡 `layout.artifacts` 逐 kind 覆盖。
 - 想脱离 preset 独立分发的卡，把 `detect` / `artifactAlsoRead` 写进卡自己——只靠 preset
   声明的话，preset 展开后这两样会丢。
-- 建频道脚手架按 layout `mkdir` 骨架 + 从卡拷随卡资源（prompts / 素材种子）。
+- 建频道脚手架按 layout `mkdir` 骨架 + 从卡拷随卡资源（提示词 / 素材种子）。
+- 素材库、音效库、场景组件这类**频道级目录不在 layout 里**：它们是参数，写成 `config` 里的 `fileRef` 字段
+  （惯例 `library.asset`、`library.scenes`），谁读谁按完整键取。
 
 ## 4. 为什么这样设计（给用户解释时用）
 
