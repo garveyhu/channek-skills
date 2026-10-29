@@ -1,7 +1,7 @@
 # manifest.json 字段参考
 
 契约类型：`@channek/plugin-kit`（`PluginManifest`）。编辑器补全：manifest 首行加
-`"$schema": "https://unpkg.com/@channek/plugin-kit/schema/plugin-manifest.schema.json"`
+`"$schema": "https://cdn.channek.com/libs/channek/plugin-manifest.schema.json"`
 （schema 随 `@channek/plugin-kit` 发布，装了这个包也可以指向 `node_modules/@channek/plugin-kit/schema/plugin-manifest.schema.json`）。
 npm 上的 schema 可能比 app 晚一拍（比如还不认识新加的字段），**以 `channek check <插件目录>` 为准**。
 

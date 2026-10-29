@@ -1,5 +1,5 @@
 {
-  "$schema": "https://unpkg.com/@channek/plugin-kit/schema/plugin-manifest.schema.json",
+  "$schema": "https://cdn.channek.com/libs/channek/plugin-manifest.schema.json",
   "manifestVersion": 1,
   "id": "acme.warm-night",
   "name": "暖夜",
