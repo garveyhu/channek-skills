@@ -53,6 +53,8 @@
   declaredOnly?; // true = 只在卡 presentation.sections 点名时出现
   entry? }       // 本区沙箱入口 html（缺省回落 manifest entries.sandbox）；入口即身份
 // props: { workspaceId: string | null; active: boolean }
+// app 自带频道首页 channek.home（没装任何插件的频道也有）。卡的 presentation.defaultSection 指向你的区时，
+// 你的区就是首页、channek.home 不出现；想两个都要，卡里把 channek.home 也写进 presentation.sections。
 ```
 
 ## 后端与数据（✅）

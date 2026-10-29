@@ -18,6 +18,8 @@
 //   │   ├── icon.png            ← meta.icon 引用
 //   │   ├── tokens.json         ← 设计 token（config 里 brand.tokens 指过来）
 //   │   └── voices.json         ← 音色档（config 里 voice.profiles 指过来）
+//   ├── plugins/
+//   │   └── acme.talkfast-suite/ ← 频道插件（plugins 引用；目录名 = 插件 id），随卡分享
 //   ├── STOREFRONT.md           ← 上架长文（要上架才需要）
 //   └── work/                   ← 做出来的东西（菜）：分享时不带
 //       ├── inbox/              ← 选题
@@ -71,9 +73,11 @@
     ]
   },
 
+  // 活动栏：数组序就是顺序。channek.home 是 app 自带的频道首页（不用装插件）；
+  // defaultSection 指向谁，谁就是首页。只要自带首页的话，这一段整个不写也行
   "presentation": {
-    "sections": [{ "id": "homes" }, { "id": "content" }],
-    "defaultSection": "homes"
+    "sections": [{ "id": "channek.home" }, { "id": "acme.talkfast-suite.review" }],
+    "defaultSection": "channek.home"
   },
 
   // 给 AI 的入口：全部写进 AGENTS.md 托管块，skill 挂到 .claude/skills/
@@ -138,7 +142,7 @@
   },
 
   "requires": {
-    "app": ">=0.9.0",
+    "app": ">=0.1.1",
     "providers": [
       { "capability": "channek.tts",
         "prefer": ["acme.voxcpm-local"],
@@ -153,8 +157,9 @@
       { "id": "acme.publish-platforms" }
     ]
   },
-  // 频道插件：住在本频道里的插件目录（相对频道根），随卡分享；收卡人打开频道时先过信任卡
-  // "plugins": ["plugins/acme.talkfast-suite"],
+  // 频道插件：住在本频道里的插件目录（相对频道根，目录名 = 插件 id），随卡分享；收卡人打开频道时先过信任门。
+  // 上面 presentation 里的 acme.talkfast-suite.review 就由它提供。频道插件不写进 requires.plugins
+  "plugins": ["plugins/acme.talkfast-suite"],
 
   "runtime": {
     "endpoints": [

@@ -79,6 +79,9 @@ description: 开发、修改、校验并分享一个 Channek 频道（频道卡 
 - 流程写进 `pipeline.steps`（步序 + 每步配置，只有这一种写法）、目录写进 `layout`（含工件落点覆盖）、
   界面写进 `presentation`（启用哪些功能区）、依赖写进 `requires`、市场筛选标签写进 `meta.tags`
   （如 `["视频", "横屏"]`）——细则见 `references/pipeline-and-artifacts.md` 与 `references/requires-and-secrets.md`。
+- **首页**：每个频道都有 app 自带的首页 `channek.home`（流程、内容、分区、做法一览，不用装插件）。
+  `presentation.defaultSection` 决定首页位：不写就是 `channek.home` 排第一格；指向某个插件功能区，那个区就是首页、
+  `channek.home` 不出现；两个都要，就把 `channek.home` 也写进 `presentation.sections`。
 - **一切参数写进 `config`**，它有两种段：
   - **作者段** `{ id, name, group?, hint?, fields }`：字段定义和值都在卡里。频道是谁写进 id 为 `profile`
     的作者段（赛道、受众、人设……）；设计 token 放进一个 JSON 文件（惯例 `brand/tokens.json`），用作者段字段
@@ -115,6 +118,7 @@ channek check <频道目录>     # 随 Channek app 安装
 `references/generated/card-schema.md` 就能改；`config` 里的插件段按本机装着的插件清单校验（如
 `config.captions：captions.stroke must be one of: …`）。零错误才算过。它还会提醒：频道目录名与 `card.id` 不一致、
 `agent` / `plugins` 指向的路径不存在、插件段对应的插件没装（值没校验）。
+带了频道插件的，插件清单本身要另跑 `channek check plugins/<插件id>`——频道那一遍只核对插件目录在不在。
 
 **为什么这道闸必须排在最前**：卡不合 schema 时，app 打开这个文件夹后**不会当成频道**——
 它会先按普通文件夹打开，顶上一条横幅写着「这里的频道卡没能认出来」和出错的字段。
@@ -142,8 +146,8 @@ channek check <频道目录>     # 随 Channek app 安装
       schema 直接拒（这是校验红线，不是风格建议）。
 - [ ] 卡内相对路径不含 `..`、不是绝对路径（防路径逃逸，校验会拒）。
 - [ ] 要代码就做成插件：只有这个频道用的，放进频道自己的 `plugins/<插件id>/` 并在卡的 `plugins` 里声明
-      （**频道插件**，收卡人打开频道时先过信任卡）；多个频道都要用的，做成全局插件，卡用 `requires.plugins` 引用。
-      写插件见 `channek-plugin-dev`。
+      （**频道插件**，收卡人打开频道时先过信任门）；多个频道都要用的，做成全局插件，卡用 `requires.plugins` 引用。
+      写插件见 `channek-plugin-dev`，频道插件的完整规则在它的 `references/channel-plugins.md`。
 
 ### 5. 过流程体检（写完 pipeline 后自查）
 
@@ -204,7 +208,8 @@ sop/skills/
 **先教用户把频道用起来**（比分享更优先）：
 
 1. 在 app 里**直接「打开文件夹」**选这个频道目录——app 认出根目录的 `channel.json`，频道就出现了；
-   首次打开会补上这台机器上的频道身份（顶层 `id` / `slug`）。带了频道插件的会先弹信任卡；
+   首次打开会补上这台机器上的频道身份（顶层 `id` / `slug`）。带了频道插件的，先在右上角「还差 N 件事」
+   （或 设置 › 本频道）里「信任并加载」，信任前它们不加载；
 2. 打开频道看灯轨：步骤序和他描述的一致吗？缺插件的步会显示占位卡（「由插件 X 提供 · 未安装」），
    这是正常的诚实降级，不是坏了。
 
@@ -238,7 +243,8 @@ sop/skills/
 | 想锁死某家能力提供方不许降级？ | `requires.providers[].fallback: false`；缺省是「建议优先，没装就用别家顶上」 |
 | 步骤没装会怎样？ | 灯轨照常显示 + 占位卡提示装哪个插件；标了 `optional: true` 的步会被跳过——**只降级不崩溃**，但要在 `requires.plugins` 里声明，导入向导才知道引导用户装什么 |
 | 提示词放哪？ | `sop/prompts/`（纯文本），`agent.prompts` 登记（键用步骤的 `promptKey`），开工提示写 `agent.kickoff` |
-| 插件放频道里还是装成全局？ | 只有这个频道用 → 频道插件（`plugins/<id>/` + 卡的 `plugins`）；多个频道都用 → 全局插件 + `requires.plugins` |
+| 插件放频道里还是装成全局？ | 只有这个频道用 → 频道插件（`plugins/<id>/` + 卡的 `plugins`）；多个频道都用 → 全局插件 + `requires.plugins`。第二个频道也要用时再提升，做法见 `channek-plugin-dev` 的 `references/channel-plugins.md` |
+| 首页显示什么？ | 不写 `presentation.defaultSection` 就是 app 自带的 `channek.home`；写成某个插件功能区 id，首页就换成它 |
 | 某个区（如质检教训）分享时要不要带？ | 是做法的一部分 → 在 `layout.sections` 里标 `recipe: true`；是做出来的东西 → 不标，默认不带 |
 
 ## References

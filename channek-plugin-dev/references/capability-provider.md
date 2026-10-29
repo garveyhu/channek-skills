@@ -138,7 +138,8 @@ method 只收 GET/POST/PUT；body.kind = json / form / binary。
   `type: "secret"` 同理（「值不进插件设置存储，只经主进程写 OS 钥匙串」）。
 - **T2 host 没有调用能力的口。** 能力只能从 T1 沙箱侧发起：`sdk.suite.invokeCapability(id, { inputs })`。
   出处：`frontend/app/src/main/plugin/host-api-gate.ts` 是 T2 的完整 API 面，里面只有
-  workspace / project / commands / ui / shell / storage，**没有 capability**。
+  workspace / project / commands / ui / shell / storage，**没有 capability**。T2 能帮的是备料：
+  把要交给能力的文件写进自己的工作目录 `ctx.workDir`，再由沙箱用 `work:<相对路径>` 递过去（见下）。
 
 ### 由此推出的形态选择
 
@@ -154,8 +155,26 @@ method 只收 GET/POST/PUT；body.kind = json / form / binary。
 **别试图在 T2 host 里串一条「调几次能力」的流水线**——那里既拿不到密钥、也调不动能力。
 反过来说这个分层是对的：沙箱是 UI 层，本来就该握着「现在跑到哪一步」。
 
-一个配套细节：能力的 `inputs` 是 `Record<string, string>`，**长提示词与图片都要走文件**
-（先让 host 把文本落成临时文件，再把路径当 input 传）。命令行塞不下几千字，更塞不下一张图。
+一个配套细节：能力的 `inputs` 是 `Record<string, string>`，**长提示词与图片都要走文件**。
+命令行塞不下几千字，更塞不下一张图。
+
+### 给能力递文件：只认两种写法
+
+能力定义里 `type: "file"` 的入参，宿主**只放行两种来处**，别的一律报 `CAPABILITY_INPUT_PATH` 拒掉
+（不是悄悄丢掉）：
+
+| 写法 | 按什么解析 | 适用 |
+|---|---|---|
+| 条目内相对路径，如 `script.md`、`voice/track.wav` | 调用时带的 `itemId` 那条内容的目录 | 处理某一条内容的工件 |
+| `work:<相对路径>`，如 `work:prompts/cover.txt` | **调用方插件自己的**工作目录（T2 里是 `ctx.workDir`） | 插件现算出来的临时文件（拼好的长提示词、裁好的参考图） |
+
+- 绝对路径、`..`、解析后逃出那块目录、文件不存在、不是普通文件——全部拒。别的插件的 `work:` 你够不着。
+- 不带 `itemId` 又递条目内路径 = 没有解析基准，同样拒。
+- 能力定义里没声明的入参键直接丢弃。
+- 典型分工：T2 把文本写进 `ctx.workDir/prompts/cover.txt` → 沙箱调
+  `invokeCapability('channek.image', { itemId, inputs: { prompt: 'work:prompts/cover.txt' } })`。
+- 「先看再要」的 `capability.preview` 里，参考图这类 file 入参改用 `cardRefs` 点名**频道里**的素材。
+- 这条规则从 `@channek/sandbox-sdk` 0.2.0 起生效；此前原样透传的写法（递一个绝对路径）现在会被拒。
 
 ## 调用侧：三条会让你算错账的事
 
@@ -169,7 +188,7 @@ sdk.suite.invokeCapability(id, { itemId?, inputs })
 | 给 `itemId` | 产物落哪 |
 |---|---|
 | 给了 | **那条内容条目的目录**（宿主用 `itemDir` 覆盖 `contentDir`） |
-| 没给 | app 的运行数据区（`~/Library/Application Support/Channek/…` 一类） |
+| 没给 | app 自己的运行数据区（系统的应用数据目录下，不在频道里） |
 
 宿主在兜底那行留了注释：「**它是给 UI 回读逐条结果用的中间产物，不该混进频道目录**」。
 所以没有条目可挂的场景（不是在处理某条内容），落兜底目录是对的 ——

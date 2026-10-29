@@ -1,7 +1,9 @@
 # manifest.json 字段参考
 
 契约类型：`@channek/plugin-kit`（`PluginManifest`）。编辑器补全：manifest 首行加
-`"$schema": "https://cdn.archeruuu.com/libs/channek/plugin-manifest.schema.json"`。
+`"$schema": "https://unpkg.com/@channek/plugin-kit/schema/plugin-manifest.schema.json"`
+（schema 随 `@channek/plugin-kit` 发布，装了这个包也可以指向 `node_modules/@channek/plugin-kit/schema/plugin-manifest.schema.json`）。
+npm 上的 schema 可能比 app 晚一拍（比如还不认识新加的字段），**以 `channek check <插件目录>` 为准**。
 
 ## 字段表
 
@@ -12,12 +14,13 @@
 | `name` | ✅ | 显示名；不得含「Channek」字样冒充官方 |
 | `version` | ✅ | semver |
 | `description` | ✅ | 清单列表里那一行（一句话说「装了它能做什么」） |
-| `minAppVersion` | ✅ | 低于此版本的 app 标 incompatible |
+| `minAppVersion` | ✅ | 低于此版本的 app 标 incompatible。写你真正测过的版本（当前 app `0.1.1`），别凭感觉写高 |
 | `trust` | ✅ | `declarative`（T0）/ `sandboxed`（T1）/ `privileged`（T2） |
 | `apiVersion` | T1/T2 ✅ | 恒为 `"1"`；T0 禁止 |
 | `entries` | 视级 | `{ sandbox?: "dist/xx.html", main?: "dist/main.cjs" }`；T0 禁止；T1 必有 sandbox；插件目录内相对路径（绝对路径 / 逃出插件根被拒） |
 | `permissions` | 可选 | 见下；T0 禁止 |
 | `contributes` | 可选 | `{ "<扩展点键>": [decl, …] }`——贡献声明的家 |
+| `channelConfig` | 可选 | **插件要的频道参数**：`[{ id, name, group?, hint?, fields }]`。频道卡的 `config` 里用插件段 `{ id, plugin, values }` 只存值，字段定义只在这里有一份。见下方「channelConfig」 |
 | `activation` | 可选 | 懒激活事件：`onStartup` / `onStartupFinished` / `onWorkspaceOpen` / `workspaceContains:<glob>` / `onProjectOpen` / `onExport` / `onCommand:<id>` / `onFileOpen:<ext>` / `onFileOpen:mediaType:<type>` / `onPanel:<id>` / `onView:<id>` / `onGenerator:<kind>` / `onBackground:<id>` |
 | `background` | 可选 | T2 专用后台任务：`[{ id, intervalSeconds(≥60), runAtStartup? }]`，单插件 ≤4 条；非 privileged 声明即非法 |
 | `dependencies` / `optionalDependencies` | 可选 | `Record<插件id, semver range>`；不许依赖自己 |
@@ -58,8 +61,47 @@
 | V14 | dependencies 形状、不许自依赖、range 合法 |
 | V15 | 同一 manifest 内既定义又提供能力时，invoke 模板的 `{{input.x}}` 必须都在 definition 的 inputs 里声明过 |
 | V16 | plugin.requirement 结构校验（remedy.commandId 必须由本 manifest 贡献、remedy.key 必须是本 manifest 某设置字段、providers 点名必须存在） |
+| V17 | `channelConfig` 结构：段 id 合法且不重复、字段类型八选一、select 选项非空不重复、number 的 min ≤ max、默认值合类型、不许 `valueFrom` |
 
-本地校验：`plugin-cli validate`（与商店目录 CI 同一执行体），error 级 = 直接拒收。
+本地校验：`channek check <插件目录>`（与 app 装插件、上架安检同一份 `validateManifest`），error 级 = 直接拒收。
+
+## channelConfig：插件声明自己要读的频道参数
+
+频道参数（画幅、字幕规范、音色、发布账号……）住在频道卡的 `config` 里。**由插件读的那几段，字段定义写在插件清单里**，
+卡里只存值——插件一升级，字段定义跟着插件走，不会和卡里抄的一份漂开。
+
+```jsonc
+"channelConfig": [
+  {
+    "id": "captions",                 // 段 id：字母开头，可带点（quality.voice）；完整键的前缀
+    "name": "字幕",
+    "group": "style",                 // style / rules / advanced 三选一，缺省 style
+    "fields": [
+      { "key": "maxLines", "name": "最多几行", "type": "number", "value": 2, "min": 1, "max": 3 },
+      { "key": "stroke", "name": "描边", "type": "select", "value": "soft",
+        "options": [{ "value": "none", "label": "无" }, { "value": "soft", "label": "柔和" }] },
+      { "key": "highlight", "name": "关键词高亮", "type": "boolean", "value": true }
+    ]
+  }
+]
+```
+
+频道卡里对应的插件段（段 id 照抄、`plugin` 写你的插件 id、只写值；没写的键按这里的 `value` 补默认）：
+
+```jsonc
+{ "id": "captions", "plugin": "acme.production", "values": { "maxLines": 2, "stroke": "soft" } }
+```
+
+- 字段类型八种：`text` / `number` / `boolean` / `select` / `color`（只收 hex）/ `fileRef`（频道内相对路径）/
+  `directory`（本机目录，值永不入卡）/ `list`（字符串数组）。字段上的 `value` 在这里是**默认值**。
+- `valueFrom`（长文本外置）只给卡里的作者段用，插件清单里写了就是 V17 错误——长默认值直接写进 `value`。
+- 字段可带 `ask: { example? }`（用卡开频道时要问的题）、`brief: false`（不渲进 AGENTS.md）、`required`、`hint`。
+- **完整键 = 段 id + `.` + 短键**（`captions.maxLines`）。插件读值走桥 `card.config`（`sdk.suite.cardConfig(keys?)`），
+  缺的键宿主已按你的默认值补上；agent 与脚本用 `channek card captions.maxLines`。
+- 插件已装时 `channek check <频道>` 与 app 按这份声明校验卡里的值（类型、选项、范围；声明之外的键报警告）；
+  插件没装时那一段只读显示、照常进 AGENTS.md。
+- `channelConfig` 与 `ui.settingsSection` 分工：前者是**这个频道取什么值**（随卡走、进 AGENTS.md、谁都能读）；
+  后者是插件自己的设置页（机器级路径、端点、内部调参，`scope` / `snapshot` 决定随不随卡）。
 
 
 ## 设置字段的隐性必填

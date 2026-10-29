@@ -9,7 +9,7 @@
 |---|---|---|
 | 一句话简介 | `meta.description` | 文本 |
 | 封面 | `meta.cover` | http(s) 外链 或 卡内相对路径 |
-| 预告片 | `meta.trailer` | **仅 http(s) 外链**（视频打进卡包会让分发体积失控） |
+| 预告片 | `meta.trailer` | http(s) 外链 或 卡内相对路径；**推荐外链**（视频打进卡包会让分发体积失控） |
 | 截图廊 | `meta.preview[]` | 外链或卡内路径，最多 6 张 |
 | 筛选标签 | `meta.tags[]` | 自由文本（如 `视频` `横屏` `小说`），频道中心按它筛选 |
 | 市场介绍长文 | `STOREFRONT.md` | Markdown |

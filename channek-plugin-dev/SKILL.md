@@ -61,7 +61,8 @@ T2 是生态灾难。
 **先定放哪:全局插件还是频道插件?** 只有一个频道用得上的(某个频道专属的功能区、分析器)做成**频道插件**:
 放进那个频道的 `plugins/<id>/`,在频道卡 `channel.json` 的 `plugins` 里写上相对路径——它随频道分享,
 别的频道看不见。好几个频道都要用的(出图、配音、发布平台)做成**全局插件**,频道卡用 `requires.plugins` 按 id 要。
-三级信任对两者都开放;频道插件多一道「频道被信任才加载」的门,见 `references/trust-tiers.md`。
+三级信任对两者都开放;频道插件多一道「频道被信任才加载」的门。**做频道插件先读
+`references/channel-plugins.md`**:怎么声明、目录放哪、信任门与开发模式、撞名、分享时怎么带、什么时候提升成全局插件。
 
 一个提醒:app 已经加载过的数据(内容条目、卡声明、素材索引、管线状态…),T1 经 suite 桥
 都拿得到——别因为「要读数据」就误上 T2。桥能给什么查 `references/sandbox-bridge.md`;
@@ -77,6 +78,9 @@ T2 是生态灾难。
 - T1 要 `apiVersion: "1"` + `entries.sandbox`;T2 要 `apiVersion` +(有代码时)`entries.main`。
 - 权限按需最小化;命令 id 必须带 `<pluginId>.` 前缀。
 - `description` 是插件市场里用户看到的那一行:说「装了它我能做什么」,不说实现细节。
+- `minAppVersion` 必填:写你真正测过的 app 版本(当前 `0.1.1`),写高了用户那边是灰的 incompatible。
+- 插件要读的频道参数(画幅、音色、发布账号…)用清单顶层的 `channelConfig` 声明段与字段,频道卡里只存值,
+  插件经桥 `card.config` 按完整键(`段 id.短键`)读。见 `references/manifest-reference.md`。
 
 写完跑 **`channek check <插件目录>`**:它用的是 app 装插件时同一份清单校验,另外会报出
 会生效的字段里写了本机路径。规则全集见 `references/generated/manifest-rules.md`。
@@ -109,8 +113,10 @@ ln -s <你的开发目录> ~/.channek/plugins/<manifest.id>   # 全局插件:软
 然后:设置 → 第三方插件 → 重新扫描 → 启用。
 
 **频道插件**直接在频道里开发:插件放 `plugins/<id>/`、`channel.json` 的 `plugins` 里写上路径,打开频道,
-在信任卡上勾「这是我自己的频道,打开开发模式」再点「信任并加载」——开发模式下改代码不会被当成篡改而自动停用。
-**只给自己的频道开**。**改完之后 app 用不用得上新代码,分三种情况**:
+在右上角「还差 N 件事」或 设置 › 本频道 里「信任并加载」,再到 设置 › 插件 › 这个插件的详情页打开「开发模式」开关
+——开发模式下改代码不会被当成篡改而自动停用。**只给自己的频道开**。完整步骤与排错见 `references/channel-plugins.md`。
+
+**改完之后 app 用不用得上新代码,分几种情况**(全局插件与频道插件一样):
 
 | 改了什么 | 怎么让它生效 |
 |---|---|
@@ -129,19 +135,20 @@ ln -s <你的开发目录> ~/.channek/plugins/<manifest.id>   # 全局插件:软
 | 列表里没有 | 目录名 = manifest.id?manifest 是合法 JSON? |
 | 红标 error | 点开看逐条校验错误(id 不合法 / T0 带了 entries / …) |
 | 灰 incompatible | `minAppVersion` 过高 |
-| 频道插件没出现 | 频道还没被信任(看频道里的信任提示条);或 id 被别处占用 / 路径不对(频道里有提示条说原因) |
+| 频道插件没出现 | 频道还没被信任(右上角「还差 N 件事」里有「待信任」);或 id 与已装插件撞名 / 路径不对(同一张清单里写着原因)。详见 `references/channel-plugins.md` 第 5 节 |
 | 页面停在初始文本 | **脚本内联在 html 里了**——安全策略不放行内联脚本,HTML 照常渲染但脚本不跑,改成外部 js 文件 |
 | 行为不对 | 插件详情页「日志」(最近 200 条)+ 权限拒绝计数 |
 
 ### 6. 打包与分发
 
-- 用 **`channek plugin pack <插件目录>`** 打包,**绝不手工 zip**——pack 会按与安装侧同一份
-  黑名单剥掉 `.git*` / `node_modules` / 疑似密钥;手工 zip 哪怕夹带一个 `.gitignore`,
-  都会在用户机器上被安装侧整包拒收,而你收不到任何报错。
+- 用 **`channek plugin pack <插件目录>`** 打包,**绝不手工 zip**——pack 先跑清单校验,再按与安装侧同一份
+  黑名单剥掉点开头的文件 / `node_modules` / 编译缓存 / 疑似密钥 / 软链;手工 zip 哪怕夹带一个 `.gitignore`,
+  都会在用户机器上被安装侧整包拒收,而你收不到任何报错。pack 不读 `.gitignore`,构建垃圾(sourcemap 等)先自己清掉。
 - 三条分发路:**独立分发**(用户导入 / 商店,通用能力走这条)、**随卡捎带**
   (卡包按 `requires` 捎带的全局插件,在包的 `plugins/` 里;包内 T1/T2 必须有有效签名),
   以及**频道插件**(只给一个频道用:放进频道的 `plugins/<id>/`、在 `channel.json` 的 `plugins` 里声明,
-  它就是频道的文件,分享频道时自然带走;收卡人打开频道时过信任卡。详见 `references/trust-tiers.md`)。
+  它就是频道的文件,导出 `.channel` 时自然带走;收卡人打开频道时先过信任门。导出前先构建好 `dist/`,
+  详见 `references/channel-plugins.md` 第 7 节)。
 - 上架硬规则与流程见 `references/packaging-and-publish.md`。
 
 ## 自检清单(提交前逐条过)
@@ -161,6 +168,8 @@ ln -s <你的开发目录> ~/.channek/plugins/<manifest.id>   # 全局插件:软
 - [ ] 过桥的单条数据 <256KiB;大数据走 `channek-media:` URL 或自己切块
 - [ ] **没有 `catch {}` 吞掉取数失败**——「读不到」要和「没有」显示成两种东西
 - [ ] 能力调用的超时 < provider 的 `timeoutMs`,且重试后的总和也小于它
+- [ ] 给能力递文件只用条目内相对路径(带 `itemId`)或 `work:<相对路径>`(T2 写在 `ctx.workDir` 里),不递绝对路径
+- [ ] 频道插件:目录名 = id、卡里 `plugins` 已声明、`dist/` 已构建(见 `references/channel-plugins.md` 自检)
 - [ ] 声明了 `plugin.requirement` 探测;有 npm 依赖时带 `package-lock.json`
 - [ ] 命令写了 `description` / `keywords`——否则 app 内的 AI 按用户的说法搜不到你的命令
 - [ ] 用 `channek caps` / `channek doctor` 验过:能力列出、徽章就绪、`channek invoke` 真跑通
@@ -171,7 +180,8 @@ ln -s <你的开发目录> ~/.channek/plugins/<manifest.id>   # 全局插件:软
 - `references/decl-contracts.md`——常用扩展点的 decl 字段摘要
 - `references/generated/`——**由 Channek 源码生成、同步进来的契约表**(贡献键 / suite 桥 op / 清单校验规则 / 主题 token),数字与名字以这里为准
 - `references/manifest-reference.md`——manifest 全字段 + 校验规则速查
-- `references/trust-tiers.md`——T0/T1/T2 各自能干什么、安全边界、选级判据
+- `references/trust-tiers.md`——T0/T1/T2 各自能干什么、安全边界、选级判据、三类来源 scope
+- `references/channel-plugins.md`——**频道插件开发规则**:选频道还是全局 · 声明与目录 · 信任门 · 开发模式 · 撞名 · 分享时怎么带 · 提升成全局插件
 - `references/sandbox-bridge.md`——T1 沙箱运行时、suite 桥操作全表、限额与错误码
 - `references/capability-provider.md`——能力体系:定义 / 供货 / 调用形态 / 占位符 / 密钥 / CLI
 - `references/readiness.md`——plugin.requirement 前置声明与三态就绪

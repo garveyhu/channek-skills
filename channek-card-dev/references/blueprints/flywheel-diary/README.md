@@ -14,7 +14,7 @@
 
 ```
 feilun-diary/
-├── channel.json  ← 频道卡：771 行（config 段占六成）        │  机器真相源
+├── channel.json  ← 频道卡：772 行（config 段占六成）        │  机器真相源
 ├── AGENTS.md     ← 十二节托管块（卡渲染）+ 手写区：宪章与补充约定 │  给 AI 的说明书
 ├── CLAUDE.md     ← 转发器，只写 @AGENTS.md                   │
 ├── sop/          ← 怎么做（菜谱）：随卡分享                  │
@@ -48,7 +48,7 @@ feilun-diary/
 | 章 | 讲什么 | 什么时候读 |
 |---|---|---|
 | [01 · 骨架](01-skeleton.md) | 菜谱 / 菜的切分 · `.channek/` 是本机状态 · 四库 · 条目 8 目录 2 文件 · 频道级 vs 本条独有 | **建目录前** |
-| [02 · 频道卡](02-card-config.md) | 771 行卡的比例尺 · 两层身份 · pipeline 是重映射层 · layout 两套相对基准 · config 的作者段 / 插件段 / hint / 阈值容差对 · token 进文件 · requires 与频道插件 · 问卷与拷贝语义 | **写 channel.json 时** |
+| [02 · 频道卡](02-card-config.md) | 772 行卡的比例尺 · 两层身份 · pipeline 是重映射层 · layout 两套相对基准 · config 的作者段 / 插件段 / hint / 阈值容差对 · token 进文件 · requires 与频道插件 · 问卷与拷贝语义 | **写 channel.json 时** |
 | [03 · 频道说明书](03-agents-md.md) | 托管块十二节 ← 卡的哪一段 · 信任围栏 · `agent` 段的「先看这里」· 提示词与文档 · 手写区（宪章 / 补充约定）写什么 | **卡写完、第一次在 app 打开后** |
 | [04 · 方法论层](04-methodology.md) | prompts / docs / skills 三件套 · skills 三层 · 单步骨架 · 装闸契约 · 六条范式指纹 | **要写 skill 时** |
 | [05 · 脚本与闸](05-scripts-and-gates.md) | 读卡四条路 · 退出码 · 报告五层契约 · HUMAN_CHECKS · 日期门 · 可移植七条 | **要写 check 脚本时** |

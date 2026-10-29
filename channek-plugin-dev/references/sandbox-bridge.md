@@ -25,6 +25,8 @@ sdk.onInit(async init => {
 });
 ```
 
+- SDK 版本：本页按 `@channek/sandbox-sdk` **0.3.0**（配 app 0.1.1）。0.2.0 起频道参数一律经 `card.config`
+  按完整键读、删掉了一批视频专属 op；0.3.0 起 `artifact.urls` 按工件种类点名。升级时看包里的 CHANGELOG。
 - 读 op 应答的精确 DTO 从 `@channek/ipc-contract` **类型层** `import type`（运行时保持零依赖）。
 - 错误分支认 `SuiteBridgeError.code`（`unknown-op` / `not-a-suite` / `response-too-large` /
   `permission-denied` / `consent-required` / `timeout` / `invalid-payload` / `rate-limited` /
@@ -51,12 +53,12 @@ sdk.onInit(async init => {
 | `content.readFile` | 读这条内容目录里的工件正文 |
 | `channel.readFile` | 读频道级文本（选题库、声音库说明这类属于整个频道的数据；遏制在频道根内，`.channek/`、`.git/` 不可见） |
 | `card.active` | 活动卡的只读投影，字段名与频道卡一致：`id`（= `card.id`）· `name` · `slug` · `version`（= `card.version`，未声明为 null）· `sections` · `defaultSection` · `docRefs?`（作者段里文件型参数：完整键 → 频道内相对路径）。人设、平台这类领域参数不在这里，用 `card.config` |
-| `card.config` | 按完整键（`段 id.短键`，如 `voice.default`、`publish.accounts`）取频道参数；插件段缺的键已按插件声明补上默认值，不给 `keys` 回整张表 |
+| `card.config` | `sdk.suite.cardConfig(keys?)`：按完整键（`段 id.短键`，如 `voice.default`、`publish.accounts`）取频道参数；插件段缺的键已按插件清单 `channelConfig` 的默认值补上，不给 `keys` 回整张表。宿主不认识任何领域键，人设、画风、平台、素材目录都从这里取 |
 | `card.readDoc` | 读一份卡自己指名过的文档（`docRefs` 里的）；只收卡内相对路径 |
 | `card.brandAssets` | 头像与横幅（位置由插件从 `card.config` 读出来传入） |
-| `assets.overview` | 素材概览（扫哪些目录由插件传入） |
+| `assets.overview` | 素材概览：必须带 `{ dirs, ipName? }`，要扫哪些目录由插件先从 `card.config` 读出来再传进来 |
 | `pipeline.status` | 进度灯轨状态 |
-| `artifact.urls` | 按**工件种类**点名取一条内容的授权地址：`artifact.urls(itemId, ['channek.master', 'channek.covers'])` 回 `{ byKind, files }`；`byKind[种类]` 是 `{ key, relPath, url }[]`（目录型种类 key = 去扩展名的文件名，单文件型 key 为 null）；频道不认识的种类直接报错 |
+| `artifact.urls` | 按**工件种类**点名取一条内容的授权地址：`sdk.suite.artifactUrls(itemId, ['channek.master', 'channek.covers'])` 回 `{ byKind, files }`（母版取 `byKind['channek.master'][0]`，封面取 `byKind['channek.covers']`，`key` 就是尺寸如 `16x9`）；`byKind[种类]` 是 `{ key, relPath, url }[]`（目录型种类 key = 去扩展名的文件名，单文件型 key 为 null）；频道不认识的种类直接报错 |
 | `artifact.mediaUrl` | 单个工件的授权地址（`artifact.urls` 的逐个兜底） |
 | `publish.platforms` | 已注册发布平台目录 |
 
@@ -78,7 +80,7 @@ sdk.onInit(async init => {
 | `channel.writeFile` ✍ | 写频道级文本（频道卡与频道插件目录只读；带读到的 `revision`，中间被改过就冲突） |
 | `card.kickoff` | 从卡发起创作 |
 | `card.updateSoundMeta` ✍ | 改活动卡声音库里某条 wav 的说明卡（卡 id 宿主注入） |
-| `capability.invoke` ✍ | 调一条已注册能力（manifest 逐条点名 `capability:invoke` 白名单；file 类入参由宿主解析注入）。出图、出封面、发布预填都走这条 |
+| `capability.invoke` ✍ | `sdk.suite.invokeCapability(id, { itemId?, inputs })`：调一条已注册能力（manifest 逐条点名 `capability:invoke` 白名单）。file 类入参**只认**条目内相对路径（要带 `itemId`）或 `work:<相对路径>`（本插件工作目录，T2 侧 `ctx.workDir`），绝对路径与 `..` 一律拒——见 `capability-provider.md`「给能力递文件」。出图、配音、发布预填都走这条 |
 | `capability.preview` ✍ / `capability.adopt` ✍ | 先看再要：preview 跑一次能力、产物不进频道、回预览 URL（file 类入参只能用 `cardRefs` 点名卡内素材）；adopt 把看中的落成正式工件，只收语义 id + 实例名（如 `channek.covers` + `16x9`），落点由卡回答 |
 | `pipeline.acknowledgeStale` ✍ / `pipeline.acknowledgeAllStale` ✍ / `pipeline.revokeStaleAcknowledgement` ✍ | 灯轨过期确认三件套（应答恒为重算后的整条灯轨） |
 

@@ -65,13 +65,20 @@
 
 ```jsonc
 "presentation": {
-  "sections": [ { "id": "homes" }, { "id": "acme.fan-ops.assets" } ],  // 数组序 = 导航序
-  "defaultSection": "homes"    // （严）sections 显式声明时必须引用其中一项；id 重复报错
+  // 数组序 = 活动栏顺序；id 引用 ui.suiteSection 贡献 id（内置、全局插件、频道插件都行）
+  "sections": [ { "id": "channek.home" }, { "id": "acme.fan-ops.assets", "provider": "acme.fan-ops" } ],
+  "defaultSection": "acme.fan-ops.assets",   // （严）写了 sections 时必须引用其中一项；id 重复报错
+  "contentSurface": "acme.content-surface"   // 内容详情页由哪个插件实现（可选）
 }
 ```
 
-- 引用 `ui.suiteSection` 贡献 id（含第三方区）。引用未安装的区 → 占位降级，不静默隐藏。
-- 无 `presentation` 段的卡走默认链（装了什么区就有什么，`declaredOnly` 的区只在点名时出现）。
+- **首页位**：app 自带频道首页 `channek.home`（流程、内容、分区、做法一览），没装任何插件的频道也有。
+  不写 `defaultSection` → `channek.home` 排第一格；`defaultSection` 指向某个插件功能区 → 那个区就是首页，
+  `channek.home` 不出现；两个都要 → 把 `channek.home` 也写进 `sections`（上例）。
+- `sections[].provider` 点名由哪个插件实现这个区：写了就只认那一家，别家的同名区当「点名的那个还没装」占位。
+  `contentSurface` 同理，点名内容详情页的实现。这两处点名的插件也算卡的依赖。
+- 引用未安装的区 → 占位降级（「由插件 X 提供 · 未安装」），不静默隐藏。
+- 无 `presentation` 段的卡走默认链：首页 + 装了什么区就有什么，`declaredOnly` 的区只在卡点名时出现。
 
 ## agent（给 AI 的入口 · 全可选）
 
@@ -150,7 +157,7 @@ skill 和脚本按完整键读。加一个参数前先问一句：**谁读它？
 | 段 | 内容 |
 |---|---|
 | `requires` | `{ app?, providers?, plugins?, secrets? }`——详见 requires-and-secrets.md |
-| `plugins` | 频道插件目录（相对频道根，如 `plugins/acme.talkfast-suite`）：住在频道里、随卡分享，收卡人打开频道时先过信任卡才加载。只有这个频道用的插件放这里，多个频道都用的做成全局插件、走 `requires.plugins` |
+| `plugins` | 频道插件目录数组（相对频道根，如 `["plugins/acme.talkfast-suite"]`，目录名 = 插件 id）：住在频道里、随卡分享，收卡人打开频道时先过信任门才加载。路径不含 `..`、解析后不能逃出频道。只有这个频道用的插件放这里，多个频道都用的做成全局插件、走 `requires.plugins`。完整规则见 `channek-plugin-dev` 的 `references/channel-plugins.md` |
 | `bundle` | 分发清单：`omit?[{path,reason?}]`（打包跳过 + 导入披露）/ `demo?{path,license,reel?}`（随卡示例内容，license 三值 `sample-only`(默认)/`cc-by`/`inherit`） |
 
 ## runtime 层
